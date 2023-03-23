@@ -3,6 +3,7 @@ package main
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -14,9 +15,8 @@ import (
 func GzipReader(r io.Reader) (*gzip.Reader, error) {
 	gzipReader, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return gzipReader, fmt.Errorf("create gzip reader: %w", err)
 	}
-
 	return gzipReader, nil
 }
 
@@ -29,6 +29,7 @@ func main() {
 
 	r, err := GzipReader(file)
 	if err != nil {
+		log.Println("Hello")
 		log.Fatal(err)
 	}
 
@@ -39,5 +40,4 @@ func main() {
 		log.Println(err)
 	}
 	log.Println(elm)
-
 }
