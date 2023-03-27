@@ -42,7 +42,7 @@ func Test_ClassifyDataFormat(t *testing.T) {
 
 			defer file.Close()
 
-			jsonTypef := ClassifyDataFormat(file)
+			jsonTypef, _ := ClassifyDataFormat(file)
 			po, _ := file.Seek(0, io.SeekCurrent)
 
 			if tt.wantErr {
