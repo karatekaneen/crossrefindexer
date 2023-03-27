@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -13,25 +14,24 @@ func ClassifyDataFormat(r io.ReadSeeker) string {
 	token, _ := d.Token()
 	token, _ = d.Token()
 	defer r.Seek(0, 0)
+
 	if token == "items" {
-		println(token, d.InputOffset(), "crossref new")
 		return "json"
 	}
-	println(token, d.InputOffset(), "crossref old")
 	return "jsonl"
 }
 
 func main() {
-	file, err := os.Open("testdata/2022/0.json")
+	file, err := os.Open("testdata/gap/D1000000.json")
+	// file, err := os.Open("testdata/2022/0.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
-
-	ClassifyDataFormat(file)
-
+	jsonType := ClassifyDataFormat(file)
+	fmt.Printf("Json Format Type:%v\n", jsonType)
 	d := json.NewDecoder(file)
 	token, _ := d.Token()
 	token, _ = d.Token()
-	println(token, d.InputOffset())
+	fmt.Printf("Token:%v\nDecoder buf offset:%v\n", token, d.InputOffset())
 }
