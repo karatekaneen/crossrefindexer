@@ -1,4 +1,4 @@
-package main
+package crossrefindexer
 
 import (
 	"github.com/matryer/is"

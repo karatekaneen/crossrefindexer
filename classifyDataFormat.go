@@ -1,37 +1,36 @@
-package main
+package crossrefindexer
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
-	"os"
 )
 
 // ClassifyDataFormat ...
 func ClassifyDataFormat(r io.ReadSeeker) string {
 	d := json.NewDecoder(r)
-	token, _ := d.Token()
-	token, _ = d.Token()
-	defer r.Seek(0, 0)
 
-	if token == "items" {
-		return "json"
-	}
-	return "jsonl"
-}
-
-func main() {
-	file, err := os.Open("testdata/gap/D1000000.json")
-	// file, err := os.Open("testdata/2022/0.json")
+	token, err := d.Token()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error geting the first token\n", err)
 	}
-	defer file.Close()
-	jsonType := ClassifyDataFormat(file)
-	fmt.Printf("Json Format Type:%v\n", jsonType)
-	d := json.NewDecoder(file)
-	token, _ := d.Token()
-	token, _ = d.Token()
-	fmt.Printf("Token:%v\nDecoder buf offset:%v\n", token, d.InputOffset())
+
+	token, err = d.Token()
+	if err != nil {
+		log.Fatal("error geting the second token\n", err)
+	}
+
+	dataFormat := ""
+	if token == "items" {
+		dataFormat = "json"
+	} else {
+		dataFormat = "jsonl"
+	}
+
+	loc, err := r.Seek(0, 0)
+	if err != nil {
+		log.Fatal(loc, err)
+	}
+
+	return dataFormat
 }
