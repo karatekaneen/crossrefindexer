@@ -2,46 +2,36 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
 )
 
 // ClassifyDataFormat ...
-func ClassifyDataFormat(f string) string {
-	file, err := os.Open(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	d := json.NewDecoder(file)
+func ClassifyDataFormat(r io.ReadSeeker) string {
+	d := json.NewDecoder(r)
 	token, _ := d.Token()
 	token, _ = d.Token()
+	defer r.Seek(0, 0)
 	if token == "items" {
+		println(token, d.InputOffset(), "crossref new")
 		return "json"
 	}
+	println(token, d.InputOffset(), "crossref old")
 	return "jsonl"
 }
 
 func main() {
-	jsonType := ClassifyDataFormat("testdata/gap/D1000000.json")
-	if jsonType == "json" {
-		println("crossref new")
-	} else {
-		println("crossref old")
+	file, err := os.Open("testdata/2022/0.json")
+	if err != nil {
+		log.Fatal(err)
 	}
-	// 	file, err := os.Open("testdata/gap/D1000000.json")
-	// 	// file, err := os.Open("testdata/2022/0.json")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	defer file.Close()
+	defer file.Close()
 
-	// 	d := json.NewDecoder(file)
-	// 	ClassifyDataFormat(d)
-	// 	file.Seek(0, 0)
-	// 	ClassifyDataFormat(d)
+	ClassifyDataFormat(file)
 
-	// 	c := json.NewDecoder(file)
-	// 	ClassifyDataFormat(c)
-
+	d := json.NewDecoder(file)
+	token, _ := d.Token()
+	token, _ = d.Token()
+	println(token, d.InputOffset())
 }
