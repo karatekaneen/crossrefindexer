@@ -9,47 +9,32 @@ import (
 	"time"
 )
 
-var i int = 0
+// "testdata/2022/0.json"
+// "testdata/gap/D1000000.json"
+// var	file, err = os.Open("testdata/gap/D1000000.json")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
 
-func JsonParser() {
-	// "testdata/2022/0.json"
-	// "testdata/gap/D1000000.json"
-	file, err := os.Open("testdata/gap/D1000000.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+// t, err := ClassifyDataFormat(file)
+// if t == "json" {
+// 	d.Token()
+// 	d.Token()
+// 	d.Token()
+// }
 
-	t, err := ClassifyDataFormat(file)
-	log.Println(t)
-
-	d := json.NewDecoder(file)
+func JsonParser(r io.Reader) error {
+	d := json.NewDecoder(r)
 	var elm CrossRef
-	if t == "json" {
-		d.Token()
-		d.Token()
-		d.Token()
+	err := d.Decode(&elm)
+	if err == io.EOF {
+		return elm, err
+	} else if err != nil {
+		return elm, err
 	}
+	return elm, nil
 
-	for {
-		if err := d.Decode(&elm); err == io.EOF {
-			break
-		} else if err != nil {
-			log.Fatal(err)
-		}
-
-		spew.Dump(elm)
-		// log.Println(elm)
-		// for key, value := range elm {
-		// log.Println(key, ":", value)
-		// }
-		log.Println("*******", i, "*******")
-		i++
-
-		if i > 2 {
-			break
-		}
-	}
 }
 
 // Reference and value semantics reflect required and optional value in json
@@ -58,8 +43,8 @@ type CrossRef struct {
 	Author              []Author         `json:"author"`
 	ContainerTitle      []string         `json:"container-title"`
 	ContentDomain       ContentDomain    `json:"content-domain"`
-	Created             Created          `json:"created"`
-	Deposited           Deposited        `json:"deposited"`
+	Created             Indexed          `json:"created"`
+	Deposited           Indexed          `json:"deposited"`
 	Doi                 string           `json:"DOI"`
 	Indexed             Indexed          `json:"indexed"`
 	IsReferencedByCount int              `json:"is-referenced-by-count"`
@@ -104,6 +89,7 @@ type Indexed struct {
 	DateTime  time.Time `json:"date-time"`
 	Timestamp int64     `json:"timestamp"`
 }
+
 type ContentDomain struct {
 	Domain               []string `json:"domain"`
 	CrossmarkRestriction bool     `json:"crossmark-restriction"`
@@ -111,11 +97,7 @@ type ContentDomain struct {
 type PublishedPrint struct {
 	DateParts [][]int `json:"date-parts"`
 }
-type Created struct {
-	DateParts [][]int   `json:"date-parts"`
-	DateTime  time.Time `json:"date-time"`
-	Timestamp int64     `json:"timestamp"`
-}
+
 type Affiliation struct {
 	Name string `json:"name"`
 }
@@ -148,11 +130,7 @@ type Link struct {
 	ContentVersion      string `json:"content-version"`
 	IntendedApplication string `json:"intended-application"`
 }
-type Deposited struct {
-	DateParts [][]int   `json:"date-parts"`
-	DateTime  time.Time `json:"date-time"`
-	Timestamp int64     `json:"timestamp"`
-}
+
 type Primary struct {
 	URL string `json:"URL"`
 }
@@ -182,14 +160,9 @@ type Relation struct {
 	Cites []any `json:"cites"`
 }
 
-type Start struct {
-	DateParts [][]int   `json:"date-parts"`
-	DateTime  time.Time `json:"date-time"`
-	Timestamp int64     `json:"timestamp"`
-}
 type License struct {
-	URL            string `json:"URL"`
-	Start          Start  `json:"start"`
-	DelayInDays    int    `json:"delay-in-days"`
-	ContentVersion string `json:"content-version"`
+	URL            string  `json:"URL"`
+	Start          Indexed `json:"start"`
+	DelayInDays    int     `json:"delay-in-days"`
+	ContentVersion string  `json:"content-version"`
 }
