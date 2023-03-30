@@ -6,7 +6,7 @@ import (
 )
 
 // ClassifyDataFormat ...
-func ClassifyDataFormat(r io.ReadSeeker) (string, error) {
+func ClassifyDataFormat(r io.Reader) (string, error) {
 	d := json.NewDecoder(r)
 
 	_, err := d.Token()
@@ -22,10 +22,6 @@ func ClassifyDataFormat(r io.ReadSeeker) (string, error) {
 	dataFormat := "jsonl"
 	if token == "items" {
 		dataFormat = "json"
-	}
-	_, err = r.Seek(0, 0)
-	if err != nil {
-		return "", err
 	}
 
 	return dataFormat, nil
