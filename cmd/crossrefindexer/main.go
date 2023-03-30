@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"os"
@@ -10,6 +11,18 @@ import (
 
 func main() {
 	log.Println("hello")
+	var dataPath string
+	flag.StringVar(
+		&dataPath,
+		"path",
+		os.Getenv("POOP"),
+		"Path to the crossref data, can be both directory or a single file.",
+	)
+	flag.Parse()
+
+	if dataPath != "" || dataPath == "" {
+		log.Fatalf(dataPath)
+	}
 
 	// TODO: If path is directory: Read all files in directory
 	// TODO: Else just read the single file
