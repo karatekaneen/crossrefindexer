@@ -2,39 +2,40 @@ package crossrefindexer
 
 import (
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
 	"io"
-	"log"
-	"os"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
-// "testdata/2022/0.json"
-// "testdata/gap/D1000000.json"
-// var	file, err = os.Open("testdata/gap/D1000000.json")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer file.Close()
-
-// t, err := ClassifyDataFormat(file)
-// if t == "json" {
-// 	d.Token()
-// 	d.Token()
-// 	d.Token()
-// }
-
-func JsonParser(r io.Reader) error {
+func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
+	defer close(ch)
 	d := json.NewDecoder(r)
-	var elm CrossRef
-	err := d.Decode(&elm)
-	if err == io.EOF {
-		return elm, err
-	} else if err != nil {
-		return elm, err
-	}
-	return elm, nil
 
+	// The json format is quite nested so we need to skip
+	// three levels "deep" to reach the data that we want
+	if format == "json" {
+		d.Token()
+		d.Token()
+		d.Token()
+	}
+
+	elementIndex := 0
+
+	for d.More() {
+		var publication CrossRef
+
+		err := d.Decode(&publication)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return errors.Wrapf(err, "failed on parsing element %d", elementIndex)
+		}
+
+		ch <- publication
+		elementIndex++
+	}
+	return nil
 }
 
 // Reference and value semantics reflect required and optional value in json

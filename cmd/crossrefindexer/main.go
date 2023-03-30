@@ -1,53 +1,64 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
+	"io"
 	"log"
 	"os"
+
+	"github.com/karatekaneen/crossrefindexer"
 )
 
 func main() {
 	log.Println("hello")
 
-	file, err := os.Open("testdata/2022/0.json")
+	// TODO: If path is directory: Read all files in directory
+	// TODO: Else just read the single file
+
+	file, err := os.Open("testdata/2022/0.json.gz")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	r := bufio.NewReader(file)
-	d := json.NewDecoder(r)
-
-	i := 0
-
-	// t, err := d.Token()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// TODO: Figure out how this works:
-	d.Token()
-	d.Token()
-	d.Token()
-	// log.Println("token", t)
-	for d.More() {
-		var elm map[string]any
-		err := d.Decode(&elm)
-		if err != nil {
-			log.Println(err)
-		}
-
-		// log.Println("*****", i, "******")
-		// for key, value := range elm {
-		// 	log.Println(key, ":", value)
-		// }
-		i++
-
-		// if i > 5 {
-		// 	break
-		// }
+	gzr, err := crossrefindexer.GzipReader(file)
+	if err != nil {
+		log.Fatal(err)
 	}
-	d.Token()
-	log.Println(i)
+
+	fileType, err := crossrefindexer.ClassifyDataFormat(gzr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		log.Fatal(err)
+	}
+
+	gzr, err = crossrefindexer.GzipReader(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	publications := make(chan crossrefindexer.CrossRef)
+
+	pubs := []crossrefindexer.CrossRef{}
+
+	go func() {
+		for {
+			pub, open := <-publications
+			if !open {
+				break
+			}
+			// TODO: Convert to simplified format
+			// TODO: Send on another channel
+			pubs = append(pubs, pub)
+		}
+	}()
+
+	if err := crossrefindexer.JsonParser(gzr, publications, fileType); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Found", len(pubs))
+
 }

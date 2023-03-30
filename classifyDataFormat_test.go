@@ -1,11 +1,11 @@
 package crossrefindexer
 
 import (
-	"github.com/matryer/is"
-	"io"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/matryer/is"
 )
 
 func Test_ClassifyDataFormat(t *testing.T) {
@@ -45,17 +45,12 @@ func Test_ClassifyDataFormat(t *testing.T) {
 			jsonTypef, err := ClassifyDataFormat(file)
 			is.NoErr(err)
 
-			po, err := file.Seek(0, io.SeekCurrent)
-			is.NoErr(err)
-
 			if tt.wantErr {
 				is.True(jsonTypef != tt.jsonType)
-				is.Equal(po, int64(0))
 				return
 			}
 
 			is.True(jsonTypef == tt.jsonType)
-			is.Equal(po, int64(0))
 		})
 	}
 }
