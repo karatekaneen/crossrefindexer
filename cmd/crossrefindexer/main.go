@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func ReadFile(path string) {
@@ -75,26 +76,19 @@ func main() {
 		log.Fatalf(dataPath)
 	}
 
-	info, err := os.Stat(dataPath)
-
-	log.Println(info.IsDir(), err)
-	if info.IsDir() {
-		f, err := os.Open(dataPath)
+	err := filepath.Walk(dataPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatalf(dataPath)
+			log.Println(err)
+			return err
 		}
-		files, err := f.Readdir(0)
-		if err != nil {
-			log.Fatal(err)
+		if info.IsDir() {
+			return nil
+		} else {
+			ReadFile(path)
 		}
-
-		for _, v := range files {
-			if v.IsDir() {
-				continue
-			}
-			ReadFile(dataPath + v.Name())
-		}
-	} else {
-		ReadFile(dataPath)
+		return nil
+	})
+	if err != nil {
+		log.Println(err)
 	}
 }
