@@ -2,32 +2,14 @@ package main
 
 import (
 	"flag"
+	"github.com/karatekaneen/crossrefindexer"
 	"io"
 	"log"
 	"os"
-
-	"github.com/karatekaneen/crossrefindexer"
 )
 
-func main() {
-	log.Println("hello")
-	var dataPath string
-	flag.StringVar(
-		&dataPath,
-		"path",
-		os.Getenv("POOP"),
-		"Path to the crossref data, can be both directory or a single file.",
-	)
-	flag.Parse()
-
-	if dataPath != "" || dataPath == "" {
-		log.Fatalf(dataPath)
-	}
-
-	// TODO: If path is directory: Read all files in directory
-	// TODO: Else just read the single file
-
-	file, err := os.Open("testdata/2022/0.json.gz")
+func ReadFile(path string) {
+	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,4 +56,45 @@ func main() {
 
 	log.Println("Found", len(pubs))
 
+}
+
+func main() {
+	log.Println("hello")
+	log.Println(os.Getwd())
+
+	var dataPath string
+	flag.StringVar(
+		&dataPath,
+		"path",
+		os.Getenv("POOP"),
+		"Path to the crossref data, can be both directory or a single file.",
+	)
+	flag.Parse()
+
+	if dataPath == "" {
+		log.Fatalf(dataPath)
+	}
+
+	info, err := os.Stat(dataPath)
+
+	log.Println(info.IsDir(), err)
+	if info.IsDir() {
+		f, err := os.Open(dataPath)
+		if err != nil {
+			log.Fatalf(dataPath)
+		}
+		files, err := f.Readdir(0)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, v := range files {
+			if v.IsDir() {
+				continue
+			}
+			ReadFile(dataPath + v.Name())
+		}
+	} else {
+		ReadFile(dataPath)
+	}
 }
