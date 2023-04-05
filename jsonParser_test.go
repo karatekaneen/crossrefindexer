@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/matryer/is"
@@ -36,21 +37,21 @@ func Test_JsonParser(t *testing.T) {
 			name:        "happy path - JSONL",
 			data:        fileOrKill("testdata/gap/D1000000.json"),
 			fileFormat:  "jsonl",
-			itemsInFile: 999,
+			itemsInFile: 1000,
 			wantErr:     false,
 		},
 		{
 			name:        "happy path - JSON 2022",
 			data:        fileOrKill("testdata/2022/0.json"),
 			fileFormat:  "json",
-			itemsInFile: 4999,
+			itemsInFile: 5000,
 			wantErr:     false,
 		},
 		{
 			name:        "happy path - JSON 2021",
 			data:        fileOrKill("testdata/2021/0.json"),
 			fileFormat:  "json",
-			itemsInFile: 2999,
+			itemsInFile: 3000,
 			wantErr:     false,
 		},
 		{
@@ -67,11 +68,14 @@ func Test_JsonParser(t *testing.T) {
 			ch := make(chan CrossRef)
 
 			parsed := 0
+			var wg sync.WaitGroup
 
+			wg.Add(1)
 			go func() {
 				for {
 					_, open := <-ch
 					if !open {
+						wg.Done()
 						return
 					}
 					parsed++
@@ -83,8 +87,10 @@ func Test_JsonParser(t *testing.T) {
 				is.True(err != nil)
 				return
 			}
+			close(ch)
 
 			is.NoErr(err)
+			wg.Wait()
 			is.Equal(parsed, tt.itemsInFile)
 		})
 	}

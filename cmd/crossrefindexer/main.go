@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/karatekaneen/crossrefindexer"
 	"log"
 	"os"
+
+	"github.com/karatekaneen/crossrefindexer"
 )
 
 func main() {
@@ -19,5 +20,24 @@ func main() {
 		"Path to the crossref data, can be both directory or a single file.",
 	)
 	flag.Parse()
-	crossrefindexer.Load(dataPath)
+
+	publications := make(chan crossrefindexer.CrossRef)
+
+	// TODO: Add conversion
+	// TODO: Add indexing around here
+
+	go func() {
+		err := crossrefindexer.Load("testdata/2021/", publications)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	for {
+		pub, open := <-publications
+		if !open {
+			break
+		}
+		log.Println(pub.Doi)
+	}
 }

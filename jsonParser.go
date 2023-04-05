@@ -9,7 +9,6 @@ import (
 )
 
 func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
-	defer close(ch)
 	d := json.NewDecoder(r)
 
 	// The json format is quite nested so we need to skip
