@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
 
 	"github.com/karatekaneen/crossrefindexer"
 )
+
+type SimplifiedPublication struct{}
+type indexer interface {
+	Index(ctx context.Context, data chan SimplifiedPublication) error
+}
 
 func main() {
 	log.Println("hello")
@@ -24,7 +30,7 @@ func main() {
 	publications := make(chan crossrefindexer.CrossRef)
 
 	// TODO: Add conversion
-	// TODO: Add indexing around here
+	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`
 
 	go func() {
 		err := crossrefindexer.Load("testdata/2021/", publications)
