@@ -3,13 +3,24 @@ package main
 import (
 	"context"
 	"flag"
+	_ "fmt"
+	"github.com/karatekaneen/crossrefindexer"
 	"log"
 	"os"
-
-	"github.com/karatekaneen/crossrefindexer"
 )
 
-type SimplifiedPublication struct{}
+type SimplifiedPublication struct {
+	title               []string
+	DOI                 string
+	first_page          string
+	journal             []string
+	abbreviated_journal []string
+	volume              string
+	issue               string
+	year                int
+	Bibliographic       string
+}
+
 type indexer interface {
 	Index(ctx context.Context, data chan SimplifiedPublication) error
 }
@@ -33,7 +44,7 @@ func main() {
 	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`
 
 	go func() {
-		err := crossrefindexer.Load("testdata/2021/", publications)
+		err := crossrefindexer.Load("testdata/2021/0.json.gz", publications)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -44,6 +55,7 @@ func main() {
 		if !open {
 			break
 		}
-		log.Println(pub.Doi)
+		test := crossrefindexer.BuildBibliographicField(&pub)
+		log.Println(test)
 	}
 }
