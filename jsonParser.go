@@ -154,13 +154,14 @@ type License struct {
 }
 
 //
-func (pub *CrossRef) GetSimpleTitle() string {
-	var simpleTitle string
-	for _, title := range pub.Title {
-		simpleTitle = strings.Replace(title, "\n", " ", -1)
-		simpleTitle = strings.Replace(simpleTitle, "( )+", " ", -1)
+func (pub *CrossRef) GetSimpleTitle() []string {
+	simpleTitle := pub.Title
+	for pos, title := range simpleTitle {
+		title = strings.Replace(title, "\n", " ", -1)
+		title = strings.Replace(title, "( )+", " ", -1)
+		simpleTitle[pos] = strings.TrimSpace(title)
 	}
-	return strings.TrimSpace(simpleTitle)
+	return simpleTitle
 }
 func (pub *CrossRef) GetSimpleDOI() string {
 	return pub.Doi
@@ -180,6 +181,9 @@ func (pub *CrossRef) GetSimpleFirstAuthor() string {
 	}
 	// not sequence information apparently, so as fallback we use the first
 	// author in the author list
+	if len(pub.Author) == 0 {
+		return ""
+	}
 	return *pub.Author[0].Family
 }
 func (pub *CrossRef) GetSimpleFirstPage() string {
@@ -225,7 +229,7 @@ func BuildBibliographicField(pub *CrossRef) string {
 	} else {
 		res.WriteString(pub.GetSimpleFirstAuthor() + " ")
 	}
-	res.WriteString(pub.GetSimpleTitle() + " ")
+	res.WriteString(pub.GetSimpleTitle()[0] + " ")
 	res.WriteString(pub.GetSimpleJournal() + " ")
 	res.WriteString(pub.GetSimpleAbbreviatedJournal() + " ")
 	res.WriteString(pub.GetSimpleVolume() + " ")
@@ -233,4 +237,16 @@ func BuildBibliographicField(pub *CrossRef) string {
 	res.WriteString(pub.GetSimpleFirstPage() + " ")
 	res.WriteString(pub.GetSimpleYear() + " ")
 	return strings.TrimSpace(res.String())
+}
+
+type SimplifiedPublication struct {
+	title               []string
+	DOI                 string
+	first_page          string
+	journal             []string
+	abbreviated_journal []string
+	volume              string
+	issue               string
+	year                int
+	Bibliographic       string
 }
