@@ -2,13 +2,9 @@ package crossrefindexer
 
 import (
 	"encoding/json"
-	"io"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/pkg/errors"
+	"io"
+	"time"
 )
 
 func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
@@ -151,112 +147,4 @@ type License struct {
 	Start          Indexed `json:"start"`
 	DelayInDays    int     `json:"delay-in-days"`
 	ContentVersion string  `json:"content-version"`
-}
-
-//
-func (pub *CrossRef) GetSimpleTitle() []string {
-	simpleTitle := pub.Title
-	if len(simpleTitle) == 0 {
-		return []string{""}
-	}
-	for pos, title := range simpleTitle {
-		title = strings.Replace(title, "\n", " ", -1)
-		title = strings.Replace(title, "( )+", " ", -1)
-		simpleTitle[pos] = strings.TrimSpace(title)
-	}
-	return simpleTitle
-}
-
-func (pub *CrossRef) GetSimpleDOI() string {
-	return pub.Doi
-}
-
-func (pub *CrossRef) GetSimpleAuthor() string {
-	if len(pub.Author) == 0 {
-		return ""
-	}
-	var simpleAuthor strings.Builder
-	for _, auth := range pub.Author {
-		simpleAuthor.WriteString(*auth.Family + " ")
-	}
-	return strings.TrimSpace(simpleAuthor.String())
-}
-
-func (pub *CrossRef) GetSimpleFirstAuthor() string {
-	if len(pub.Author) == 0 {
-		return ""
-	}
-	for _, auth := range pub.Author {
-		if *auth.Sequence == "first" && *auth.Family != "" {
-			return *auth.Family
-		}
-	}
-	// not sequence information apparently, so as fallback we use the first
-	// author in the author list
-	return *pub.Author[0].Family
-}
-
-func (pub *CrossRef) GetSimpleFirstPage() string {
-	sp := regexp.MustCompile(`,|-|\s`)
-	pagePieces := sp.Split(pub.Page, -1)
-	return pagePieces[0]
-}
-
-func (pub *CrossRef) GetSimpleJournal() string {
-	if len(pub.ContainerTitle) == 0 {
-		return ""
-	}
-	return pub.ContainerTitle[0]
-}
-func (pub *CrossRef) GetSimpleAbbreviatedJournal() string {
-	if len(*pub.ShortContainerTitle) == 0 {
-		return ""
-	}
-	return (*pub.ShortContainerTitle)[0]
-}
-
-func (pub *CrossRef) GetSimpleVolume() string {
-	return pub.Volume
-}
-
-func (pub *CrossRef) GetSimpleIssue() string {
-	return pub.Issue
-}
-
-// year is a date part (first one) in issued or created or published-online (we follow this order)
-func (pub *CrossRef) GetSimpleYear() int {
-	var year int
-	switch {
-	case pub.Issued.DateParts != nil:
-		year = pub.Issued.DateParts[0][0]
-	case pub.PublishedOnline != nil:
-		year = pub.PublishedOnline.DateParts[0][0]
-	case pub.PublishedPrint != nil:
-		year = pub.PublishedPrint.DateParts[0][0]
-	default:
-		// this is deposit date, normally we will never use it, but it will ensure
-		// that we always have a date as conservative fallback
-		year = pub.Created.DateParts[0][0]
-	}
-	return year
-}
-
-func BuildBibliographicField(pub *CrossRef) string {
-	var res strings.Builder
-	if pub.GetSimpleAuthor() != "" {
-		res.WriteString(pub.GetSimpleAuthor() + " ")
-	} else {
-		res.WriteString(pub.GetSimpleFirstAuthor() + " ")
-	}
-	res.WriteString(pub.GetSimpleTitle()[0] + " ")
-	res.WriteString(pub.GetSimpleJournal() + " ")
-	res.WriteString(pub.GetSimpleAbbreviatedJournal() + " ")
-	res.WriteString(pub.GetSimpleVolume() + " ")
-	res.WriteString(pub.GetSimpleIssue() + " ")
-	res.WriteString(pub.GetSimpleFirstPage() + " ")
-
-	year := pub.GetSimpleYear()
-	res.WriteString(strconv.FormatInt(int64(year), 10) + " ")
-
-	return strings.TrimSpace(res.String())
 }

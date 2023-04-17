@@ -9,20 +9,8 @@ import (
 	"os"
 )
 
-type SimplifiedPublication struct {
-	title               []string
-	DOI                 string
-	first_page          string
-	journal             []string
-	abbreviated_journal []string
-	volume              string
-	issue               string
-	year                int
-	Bibliographic       string
-}
-
 type indexer interface {
-	Index(ctx context.Context, data chan SimplifiedPublication) error
+	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
 }
 
 func main() {
@@ -55,7 +43,7 @@ func main() {
 		if !open {
 			break
 		}
-		test := crossrefindexer.BuildBibliographicField(&pub)
-		log.Println(test)
+		test := crossrefindexer.ToSimplifiedPublication(&pub)
+		log.Printf("%v", test.Bibliographic)
 	}
 }
