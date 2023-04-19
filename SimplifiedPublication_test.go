@@ -3,6 +3,7 @@ package crossrefindexer
 import (
 	"github.com/matryer/is"
 	"testing"
+	"time"
 )
 
 func Test_GetSimpleFirstPage(t *testing.T) {
@@ -88,7 +89,7 @@ func Test_GetSimpleYear(t *testing.T) {
 	}{
 		{
 			name:    "happy path",
-			year:    0,
+			year:    2006,
 			wantErr: false,
 		},
 	}
@@ -102,9 +103,37 @@ func Test_GetSimpleYear(t *testing.T) {
 	}
 }
 
+func Test_BuildBibliographicField(t *testing.T) {
+	tests := []struct {
+		name         string
+		bibliography string
+		wantErr      bool
+	}{
+		{
+			name:         "happy path",
+			bibliography: "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
+			wantErr:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := is.New(t)
+			is.Equal(BuildBibliographicField(&crossRef_test), tt.bibliography)
+
+		})
+	}
+}
+
 var given1, given2, given3 = "given1", "given2", "given3"
 var family1, family2, family3 = "f1", "f2", "f3"
-var seq1, seq2, seq3 = "first", "Second", "Third"
+var seq1, seq2, seq3 = "first", "second", "third"
+var shortContainerTitle = []string{"Short Container Title 1", "Short Container Title 2"}
+
+// var publishedOnline DateParts{DateParts:[][]int{{2013, 4, 8}}}
+var publishedOnline = DateParts{}
+var publishedPrint = DateParts{}
+
 var author1 = Author{
 	Given:    &given1,
 	Family:   &family1,
@@ -122,5 +151,20 @@ var author3 = Author{
 }
 
 var crossRef_test = CrossRef{
-	Author: []Author{author1, author2, author3},
+	Title:               []string{"title 1", "title 2"},
+	Author:              []Author{author1, author2, author3},
+	Doi:                 "DOI",
+	ContainerTitle:      []string{"Container Title 1", "Container Title 2"},
+	ShortContainerTitle: &shortContainerTitle,
+	Volume:              "Volume",
+	Issue:               "Issue",
+	Issued:              DateParts{DateParts: [][]int{{2006, 2, 27}}},
+	PublishedOnline:     &publishedOnline,
+	PublishedPrint:      &publishedPrint,
+	Created: Indexed{
+		DateParts: [][]int{{2006, 2, 27}},
+		DateTime:  time.Date(2006, time.February, 27, 21, 28, 23, 0, time.UTC),
+		Timestamp: 1141075703000,
+	},
+	Page: "200-300",
 }
