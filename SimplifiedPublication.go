@@ -1,9 +1,8 @@
 package crossrefindexer
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -21,14 +20,11 @@ func GetSimpleTitle(pub *CrossRef) []string {
 }
 
 func GetSimpleAuthor(pub *CrossRef) string {
-	if len(pub.Author) == 0 {
-		return ""
-	}
-	var simpleAuthor strings.Builder
+	var simpleAuthor []string
 	for _, auth := range pub.Author {
-		simpleAuthor.WriteString(*auth.Family + " ")
+		simpleAuthor = append(simpleAuthor, *auth.Family)
 	}
-	return strings.TrimSpace(simpleAuthor.String())
+	return strings.Join(simpleAuthor, " ")
 }
 
 func GetSimpleFirstAuthor(pub *CrossRef) string {
@@ -60,7 +56,7 @@ func GetSimpleFirstPage(pub *CrossRef) string {
 }
 
 // year is a date part (first one) in issued or created or published-online (we follow this order)
-func GetSimpleYear(pub *CrossRef) (int, error) {
+func GetSimpleYear(pub *CrossRef) int {
 	var year int
 	switch {
 	case pub.Issued.DateParts != nil:
@@ -74,14 +70,12 @@ func GetSimpleYear(pub *CrossRef) (int, error) {
 		// that we always have a date as conservative fallback
 		year = pub.Created.DateParts[0][0]
 	default:
-		return 0, errors.New("Faild to reterive a year")
+		year = 0
 	}
-	return year, nil
+	return year
 }
 
 func BuildBibliographicField(pub *CrossRef) string {
-
-	year, _ := GetSimpleYear(pub)
 
 	bibliographic := []string{
 		SimpleAuthor(pub),
@@ -91,7 +85,7 @@ func BuildBibliographicField(pub *CrossRef) string {
 		pub.Volume,
 		pub.Issue,
 		GetSimpleFirstPage(pub),
-		strconv.FormatInt(int64(year), 10),
+		fmt.Sprint(GetSimpleYear(pub)),
 	}
 
 	return strings.Join(bibliographic, " ")
@@ -118,7 +112,7 @@ func ToSimplifiedPublication(pub *CrossRef) SimplifiedPublication {
 	simplifiedPub.abbreviated_journal = *pub.ShortContainerTitle
 	simplifiedPub.volume = pub.Volume
 	simplifiedPub.issue = pub.Issue
-	simplifiedPub.year, _ = GetSimpleYear(pub)
+	simplifiedPub.year = GetSimpleYear(pub)
 	simplifiedPub.Bibliographic = BuildBibliographicField(pub)
 	return simplifiedPub
 }
