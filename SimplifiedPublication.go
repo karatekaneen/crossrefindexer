@@ -48,7 +48,7 @@ func pubYear(pub *CrossRef) int {
 	return year
 }
 
-func BuildBibliographicField(pub *CrossRef) string {
+func buildBibliographicField(pub *CrossRef) string {
 	author := make([]string, len(pub.Author))
 	for _, auth := range pub.Author {
 		if *auth.Family == "" {
@@ -72,27 +72,27 @@ func BuildBibliographicField(pub *CrossRef) string {
 }
 
 type SimplifiedPublication struct {
-	title               []string
+	Title               []string
 	DOI                 string
-	first_page          string
-	journal             []string
-	abbreviated_journal []string
-	volume              string
-	issue               string
-	year                int
+	First_Page          string
+	Journal             []string
+	Abbreviated_Journal []string
+	Volume              string
+	Issue               string
+	Year                int
 	Bibliographic       string
 }
 
 func ToSimplifiedPublication(pub *CrossRef) SimplifiedPublication {
 	var simpPub SimplifiedPublication
-	simpPub.title = pubTitle(*pub)
+	simpPub.Title = pubTitle(*pub)
 	simpPub.DOI = pub.Doi
-	simpPub.first_page = firstPage(pub)
-	simpPub.journal = pub.ContainerTitle
-	simpPub.abbreviated_journal = *pub.ShortContainerTitle
-	simpPub.volume = pub.Volume
-	simpPub.issue = pub.Issue
-	simpPub.year = pubYear(pub)
-	simpPub.Bibliographic = BuildBibliographicField(pub)
+	simpPub.First_Page = firstPage(pub)
+	simpPub.Journal = pub.ContainerTitle
+	simpPub.Abbreviated_Journal = *pub.ShortContainerTitle
+	simpPub.Volume = pub.Volume
+	simpPub.Issue = pub.Issue
+	simpPub.Year = pubYear(pub)
+	simpPub.Bibliographic = buildBibliographicField(pub)
 	return simpPub
 }

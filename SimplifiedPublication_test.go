@@ -51,14 +51,14 @@ var crossRef_test = CrossRef{
 }
 
 var simplifiedPublication1 = SimplifiedPublication{
-	title:               []string{"title 1", "title 2"},
+	Title:               []string{"title 1", "title 2"},
 	DOI:                 "DOI",
-	first_page:          "200",
-	journal:             []string{"Container Title 1", "Container Title 2"},
-	abbreviated_journal: []string{"Short Container Title 1", "Short Container Title 2"},
-	volume:              "Volume",
-	issue:               "Issue",
-	year:                2006,
+	First_Page:          "200",
+	Journal:             []string{"Container Title 1", "Container Title 2"},
+	Abbreviated_Journal: []string{"Short Container Title 1", "Short Container Title 2"},
+	Volume:              "Volume",
+	Issue:               "Issue",
+	Year:                2006,
 	Bibliographic:       "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
 }
 
