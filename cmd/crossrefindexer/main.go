@@ -9,9 +9,8 @@ import (
 	"github.com/karatekaneen/crossrefindexer"
 )
 
-type SimplifiedPublication struct{}
 type indexer interface {
-	Index(ctx context.Context, data chan SimplifiedPublication) error
+	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
 }
 
 func main() {
@@ -33,7 +32,7 @@ func main() {
 	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`
 
 	go func() {
-		err := crossrefindexer.Load("testdata/2021/", publications)
+		err := crossrefindexer.Load("testdata/2021/0.json.gz", publications)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -44,6 +43,7 @@ func main() {
 		if !open {
 			break
 		}
-		log.Println(pub.Doi)
+		test := crossrefindexer.ToSimplifiedPublication(&pub)
+		log.Printf("%v", test.Bibliographic)
 	}
 }
