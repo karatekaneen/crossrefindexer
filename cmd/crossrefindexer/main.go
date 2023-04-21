@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	_ "fmt"
-	"github.com/karatekaneen/crossrefindexer"
 	"log"
 	"os"
+
+	"github.com/karatekaneen/crossrefindexer"
 )
 
 type indexer interface {

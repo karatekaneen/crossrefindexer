@@ -2,9 +2,10 @@ package crossrefindexer
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
@@ -13,8 +14,11 @@ func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
 	// The json format is quite nested so we need to skip
 	// three levels "deep" to reach the data that we want
 	if format == "json" {
+		//nolint:errcheck
 		d.Token()
+		//nolint:errcheck
 		d.Token()
+		//nolint:errcheck
 		d.Token()
 	}
 
@@ -52,7 +56,7 @@ type CrossRef struct {
 	Issue               string        `json:"issue"`
 	Issued              DateParts     `json:"issued"`
 	JournalIssue        *JournalIssue `json:"journal-issue"` // Gap
-	Language            *string       `json:"language"`      //Gap
+	Language            *string       `json:"language"`      // Gap
 	Link                *[]Link       `json:"link"`          // Gap
 	Member              string        `json:"member"`
 	OriginalTitle       *[]any        `json:"original-title"` // 2021
