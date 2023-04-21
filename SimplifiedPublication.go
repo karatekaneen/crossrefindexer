@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func GetSimpleTitle(pub *CrossRef) []string {
+func pubTitle(pub CrossRef) []string {
 	simpleTitle := pub.Title
 	if len(simpleTitle) == 0 {
 		return []string{""}
@@ -19,44 +19,17 @@ func GetSimpleTitle(pub *CrossRef) []string {
 	return simpleTitle
 }
 
-func GetSimpleAuthor(pub *CrossRef) string {
-	var simpleAuthor []string
-	for _, auth := range pub.Author {
-		simpleAuthor = append(simpleAuthor, *auth.Family)
-	}
-	return strings.Join(simpleAuthor, " ")
-}
-
-func GetSimpleFirstAuthor(pub *CrossRef) string {
-	if len(pub.Author) == 0 {
-		return ""
-	}
-	for _, auth := range pub.Author {
-		if *auth.Sequence == "first" && *auth.Family != "" {
-			return *auth.Family
-		}
-	}
-	// not sequence information apparently, so as fallback we use the first
-	// author in the author list
-	return *pub.Author[0].Family
-}
-
-func SimpleAuthor(pub *CrossRef) string {
-	if GetSimpleAuthor(pub) != "" {
-		return GetSimpleAuthor(pub)
-	} else {
-		return GetSimpleFirstAuthor(pub)
-	}
-}
-
-func GetSimpleFirstPage(pub *CrossRef) string {
-	sp := regexp.MustCompile(`,|-|\s`)
+func firstPage(pub *CrossRef) string {
+	sp := regexp.MustCompile(
+		`,|-` +
+			// This matches any white space character, including spaces, tabs, and newlines.
+			`|\s`)
 	pagePieces := sp.Split(pub.Page, -1)
 	return pagePieces[0]
 }
 
 // year is a date part (first one) in issued or created or published-online (we follow this order)
-func GetSimpleYear(pub *CrossRef) int {
+func pubYear(pub *CrossRef) int {
 	var year int
 	switch {
 	case pub.Issued.DateParts != nil:
@@ -76,16 +49,23 @@ func GetSimpleYear(pub *CrossRef) int {
 }
 
 func BuildBibliographicField(pub *CrossRef) string {
+	author := make([]string, len(pub.Author))
+	for _, auth := range pub.Author {
+		if *auth.Family == "" {
+			continue
+		}
+		author = append(author, *auth.Family)
+	}
 
 	bibliographic := []string{
-		SimpleAuthor(pub),
-		GetSimpleTitle(pub)[0],
+		strings.TrimSpace(strings.Join(author, " ")),
+		pubTitle(*pub)[0],
 		strings.Join(pub.ContainerTitle, " "),
 		strings.Join(*pub.ShortContainerTitle, " "),
 		pub.Volume,
 		pub.Issue,
-		GetSimpleFirstPage(pub),
-		fmt.Sprint(GetSimpleYear(pub)),
+		firstPage(pub),
+		fmt.Sprint(pubYear(pub)),
 	}
 
 	return strings.Join(bibliographic, " ")
@@ -104,15 +84,15 @@ type SimplifiedPublication struct {
 }
 
 func ToSimplifiedPublication(pub *CrossRef) SimplifiedPublication {
-	var simplifiedPub SimplifiedPublication
-	simplifiedPub.title = GetSimpleTitle(pub)
-	simplifiedPub.DOI = pub.Doi
-	simplifiedPub.first_page = GetSimpleFirstPage(pub)
-	simplifiedPub.journal = pub.ContainerTitle
-	simplifiedPub.abbreviated_journal = *pub.ShortContainerTitle
-	simplifiedPub.volume = pub.Volume
-	simplifiedPub.issue = pub.Issue
-	simplifiedPub.year = GetSimpleYear(pub)
-	simplifiedPub.Bibliographic = BuildBibliographicField(pub)
-	return simplifiedPub
+	var simpPub SimplifiedPublication
+	simpPub.title = pubTitle(*pub)
+	simpPub.DOI = pub.Doi
+	simpPub.first_page = firstPage(pub)
+	simpPub.journal = pub.ContainerTitle
+	simpPub.abbreviated_journal = *pub.ShortContainerTitle
+	simpPub.volume = pub.Volume
+	simpPub.issue = pub.Issue
+	simpPub.year = pubYear(pub)
+	simpPub.Bibliographic = BuildBibliographicField(pub)
+	return simpPub
 }

@@ -6,125 +6,6 @@ import (
 	"time"
 )
 
-func Test_GetSimpleFirstPage(t *testing.T) {
-	crossRef_test := CrossRef{
-		Page: "389-399",
-	}
-
-	tests := []struct {
-		name    string
-		page    string
-		wantErr bool
-	}{
-		{
-			name:    "happy path",
-			page:    "389",
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(GetSimpleFirstPage(&crossRef_test), tt.page)
-			// if tt.wantErr {
-			// 	is.True(tt.page != GetSimpleFirstPage(&pub))
-			// 	return
-			// }
-
-		})
-	}
-
-}
-
-func Test_GetSimpleFirstAuthor(t *testing.T) {
-	tests := []struct {
-		name    string
-		author  string
-		wantErr bool
-	}{
-		{
-			name:    "happy path",
-			author:  "f1",
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(GetSimpleFirstAuthor(&crossRef_test), tt.author)
-
-		})
-	}
-}
-
-func Test_GetSimpleAuthor(t *testing.T) {
-	tests := []struct {
-		name    string
-		author  string
-		wantErr bool
-	}{
-		{
-			name:    "happy path",
-			author:  "f1 f2 f3",
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(GetSimpleAuthor(&crossRef_test), tt.author)
-
-		})
-	}
-}
-
-func Test_GetSimpleYear(t *testing.T) {
-	tests := []struct {
-		name    string
-		year    int
-		wantErr bool
-	}{
-		{
-			name:    "happy path",
-			year:    2006,
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(GetSimpleYear(&crossRef_test), tt.year)
-
-		})
-	}
-}
-
-func Test_BuildBibliographicField(t *testing.T) {
-	tests := []struct {
-		name         string
-		bibliography string
-		wantErr      bool
-	}{
-		{
-			name:         "happy path",
-			bibliography: "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
-			wantErr:      false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(BuildBibliographicField(&crossRef_test), tt.bibliography)
-
-		})
-	}
-}
-
 var given1, given2, given3 = "given1", "given2", "given3"
 var family1, family2, family3 = "f1", "f2", "f3"
 var seq1, seq2, seq3 = "first", "second", "third"
@@ -167,4 +48,38 @@ var crossRef_test = CrossRef{
 		Timestamp: 1141075703000,
 	},
 	Page: "200-300",
+}
+
+var simplifiedPublication1 = SimplifiedPublication{
+	title:               []string{"title 1", "title 2"},
+	DOI:                 "DOI",
+	first_page:          "200",
+	journal:             []string{"Container Title 1", "Container Title 2"},
+	abbreviated_journal: []string{"Short Container Title 1", "Short Container Title 2"},
+	volume:              "Volume",
+	issue:               "Issue",
+	year:                2006,
+	Bibliographic:       "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
+}
+
+func Test_ToSimplifiedPublication(t *testing.T) {
+	tests := []struct {
+		name    string
+		simpPub SimplifiedPublication
+		wantErr bool
+	}{
+		{
+			name:    "happy path",
+			simpPub: simplifiedPublication1,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := is.New(t)
+			is.Equal(ToSimplifiedPublication(&crossRef_test), tt.simpPub)
+
+		})
+	}
 }
