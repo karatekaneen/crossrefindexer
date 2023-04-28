@@ -3,26 +3,41 @@ package elastic
 import (
 	"context"
 	"fmt"
-
 	"github.com/karatekaneen/crossrefindexer"
 )
 
+// Indexer ...
 type Indexer struct {
 	dataToIndex []crossrefindexer.SimplifiedPublication
 }
 
-func (i *Indexer) Index(
-	ctx context.Context,
-	data chan crossrefindexer.SimplifiedPublication,
-) error {
-	// TODO:
-	// - fill up the slice if it's not full
+// Index ...
+func (i *Indexer) Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error {
+	i.dataToIndex = make([]crossrefindexer.SimplifiedPublication, 0, 1000)
+	for {
+		// we receive a publication
+		spub, open := <-data
+		if !open {
+			// If the channel is closed  - We "commit" the publications already in the slice before returning
+			fmt.Println(i.dataToIndex)
+			break
+		}
 
-	// we receive a publication
-	// we check if we have room in the slice
-	// - If we do, then append
-	// - If we don't "commit" the slice to elasticsearch
-	// If the channel is closed  - We "commit" the publications already in the slice before returning
+		// we check if we have room in the slice
+		if len(i.dataToIndex) < cap(i.dataToIndex) {
+			// - If we do, then append
+			// - fill up the slice if it's not full
+			i.dataToIndex = append(i.dataToIndex, spub)
+		}
+
+		if len(i.dataToIndex) == cap(i.dataToIndex) {
+			// - If we don't "commit" the slice to elasticsearch
+			fmt.Println(i.dataToIndex)
+			i.dataToIndex = i.dataToIndex[:0]
+		}
+
+	}
+
 	return fmt.Errorf("not implemented")
 }
 
