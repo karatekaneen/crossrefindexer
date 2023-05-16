@@ -1,6 +1,8 @@
 package crossrefindexer
 
 import (
+	"encoding/json"
+	"os"
 	"sync"
 	"testing"
 
@@ -59,6 +61,89 @@ func Test_Load(t *testing.T) {
 			is.NoErr(err)
 			wg.Wait()
 			is.Equal(gotPublications, tt.wantPublications)
+		})
+	}
+}
+
+func Test_GzipReader(t *testing.T) {
+	tests := []struct {
+		name       string
+		file       string
+		numOfElem  int
+		numOfLines int
+		wantErr    bool
+	}{
+		{
+			name:    "happy path",
+			file:    "testdata/gap/D1000000.json.gz",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := is.New(t)
+
+			file, err := os.Open(tt.file)
+			is.NoErr(err)
+
+			defer file.Close()
+
+			gzr, err := GzipReader(file)
+			is.NoErr(err)
+
+			defer gzr.Close()
+			if tt.wantErr {
+				is.True(err != nil)
+				return
+			}
+			j := json.NewDecoder(gzr)
+			var elm map[string]any
+			is.NoErr(j.Decode(&elm)) // Decoded frist Element
+			is.True(len(elm) > 0)
+		})
+	}
+}
+
+func Test_ClassifyDataFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		file     string
+		jsonType string
+		wantErr  bool
+	}{
+		{
+			name:     "happy path",
+			file:     "testdata/2022/0.json",
+			jsonType: "json",
+			wantErr:  false,
+		},
+		{
+			name:    "sad path",
+			file:    "testdata/gap/D1000000.json",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			is := is.New(t)
+
+			file, err := os.Open(tt.file)
+			if err != nil {
+				is.NoErr(err)
+			}
+
+			defer file.Close()
+
+			jsonTypef, err := ClassifyDataFormat(file)
+			is.NoErr(err)
+
+			if tt.wantErr {
+				is.True(jsonTypef != tt.jsonType)
+				return
+			}
+
+			is.True(jsonTypef == tt.jsonType)
 		})
 	}
 }
