@@ -9,7 +9,6 @@ import (
 )
 
 func Test_ClassifyDataFormat(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		file     string
@@ -23,10 +22,9 @@ func Test_ClassifyDataFormat(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "sad path",
-			file:     "testdata/gap/D1000000.json",
-			jsonType: "json",
-			wantErr:  true,
+			name:    "sad path",
+			file:    "testdata/gap/D1000000.json",
+			wantErr: true,
 		},
 	}
 
@@ -35,7 +33,6 @@ func Test_ClassifyDataFormat(t *testing.T) {
 			is := is.New(t)
 
 			file, err := os.Open(tt.file)
-
 			if err != nil {
 				log.Fatal(err)
 			}
