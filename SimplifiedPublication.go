@@ -33,19 +33,28 @@ func pubYear(pub *CrossRef) int {
 	var year int
 	switch {
 	case pub.Issued.DateParts != nil:
-		year = pub.Issued.DateParts[0][0]
+		year = extractYear(pub.Issued.DateParts)
 	case pub.PublishedOnline != nil:
-		year = pub.PublishedOnline.DateParts[0][0]
+		year = extractYear(pub.PublishedOnline.DateParts)
 	case pub.PublishedPrint != nil:
-		year = pub.PublishedPrint.DateParts[0][0]
+		year = extractYear(pub.PublishedPrint.DateParts)
 	case pub.Created.DateParts != nil:
 		// this is deposit date, normally we will never use it, but it will ensure
 		// that we always have a date as conservative fallback
-		year = pub.Created.DateParts[0][0]
+		year = extractYear(pub.Created.DateParts)
 	default:
 		year = 0
 	}
 	return year
+}
+
+// extractYear from dateparts and handle if it is empty
+func extractYear(dp [][]int) int {
+	if len(dp) < 1 || len(dp[0]) < 1 {
+		return 0
+	}
+
+	return dp[0][0]
 }
 
 func buildBibliographicField(pub *CrossRef) string {
