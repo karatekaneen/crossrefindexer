@@ -26,7 +26,7 @@ func main() {
 	)
 	flag.Parse()
 
-	publications := make(chan crossrefindexer.CrossRef)
+	publications := make(chan crossrefindexer.Crossref)
 
 	// TODO: Add conversion
 	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`

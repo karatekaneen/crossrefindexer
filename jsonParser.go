@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
+func JsonParser(r io.Reader, ch chan Crossref, format string) error {
 	d := json.NewDecoder(r)
 
 	// The json format is quite nested so we need to skip
@@ -25,7 +25,7 @@ func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
 	elementIndex := 0
 
 	for d.More() {
-		var publication CrossRef
+		var publication Crossref
 
 		err := d.Decode(&publication)
 		if err == io.EOF {
@@ -41,7 +41,7 @@ func JsonParser(r io.Reader, ch chan CrossRef, format string) error {
 }
 
 // Reference and value semantics reflect required and optional value in json
-type CrossRef struct {
+type Crossref struct {
 	Abstract            *string       `json:"abstract"` // Gap
 	Author              []Author      `json:"author"`
 	ContainerTitle      []string      `json:"container-title"`

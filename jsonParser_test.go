@@ -65,7 +65,7 @@ func Test_JsonParser(t *testing.T) {
 			is := is.New(t)
 			defer tt.data.Close()
 
-			ch := make(chan CrossRef)
+			ch := make(chan Crossref)
 
 			parsed := 0
 			var wg sync.WaitGroup

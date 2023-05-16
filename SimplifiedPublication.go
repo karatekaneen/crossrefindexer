@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func pubTitle(pub CrossRef) []string {
+func pubTitle(pub Crossref) []string {
 	simpleTitle := pub.Title
 	if len(simpleTitle) == 0 {
 		return []string{""}
@@ -19,7 +19,7 @@ func pubTitle(pub CrossRef) []string {
 	return simpleTitle
 }
 
-func firstPage(pub *CrossRef) string {
+func firstPage(pub *Crossref) string {
 	sp := regexp.MustCompile(
 		`,|-` +
 			// This matches any white space character, including spaces, tabs, and newlines.
@@ -29,7 +29,7 @@ func firstPage(pub *CrossRef) string {
 }
 
 // year is a date part (first one) in issued or created or published-online (we follow this order)
-func pubYear(pub *CrossRef) int {
+func pubYear(pub *Crossref) int {
 	var year int
 	switch {
 	case pub.Issued.DateParts != nil:
@@ -57,7 +57,7 @@ func extractYear(dp [][]int) int {
 	return dp[0][0]
 }
 
-func buildBibliographicField(pub *CrossRef) string {
+func buildBibliographicField(pub *Crossref) string {
 	author := make([]string, len(pub.Author))
 	for _, auth := range pub.Author {
 		if *auth.Family == "" {
@@ -92,7 +92,7 @@ type SimplifiedPublication struct {
 	Bibliographic       string
 }
 
-func ToSimplifiedPublication(pub *CrossRef) SimplifiedPublication {
+func ToSimplifiedPublication(pub *Crossref) SimplifiedPublication {
 	var simpPub SimplifiedPublication
 	simpPub.Title = pubTitle(*pub)
 	simpPub.DOI = pub.Doi

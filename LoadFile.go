@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func readFile(path string, publications chan CrossRef) error {
+func readFile(path string, publications chan Crossref) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("file %q: %w", path, err)
@@ -39,10 +39,9 @@ func readFile(path string, publications chan CrossRef) error {
 	}
 
 	return nil
-
 }
 
-func Load(path string, publications chan CrossRef) error {
+func Load(path string, publications chan Crossref) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty: %q", path)
 	}

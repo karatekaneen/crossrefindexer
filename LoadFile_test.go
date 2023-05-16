@@ -1,15 +1,13 @@
 package crossrefindexer
 
 import (
-	"testing"
-
 	"sync"
+	"testing"
 
 	"github.com/matryer/is"
 )
 
 func Test_Load(t *testing.T) {
-
 	tests := []struct {
 		name             string
 		path             string
@@ -37,7 +35,7 @@ func Test_Load(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			is := is.New(t)
-			ch := make(chan CrossRef)
+			ch := make(chan Crossref)
 
 			var wg sync.WaitGroup
 			wg.Add(1)

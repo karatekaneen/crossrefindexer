@@ -38,8 +38,8 @@ var author3 = Author{
 	Sequence: &seq3,
 }
 
-func generateCrossref(modifiers ...func(*CrossRef)) *CrossRef {
-	ref := CrossRef{
+func generateCrossref(modifiers ...func(*Crossref)) *Crossref {
+	ref := Crossref{
 		Title:               []string{"title 1", "title 2"},
 		Author:              []Author{author1, author2, author3},
 		Doi:                 "DOI",
@@ -88,7 +88,7 @@ func generateOutput(modifiers ...func(*SimplifiedPublication)) SimplifiedPublica
 func Test_ToSimplifiedPublication(t *testing.T) {
 	tests := []struct {
 		name    string
-		input   *CrossRef
+		input   *Crossref
 		want    SimplifiedPublication
 		wantErr bool
 	}{
@@ -100,7 +100,7 @@ func Test_ToSimplifiedPublication(t *testing.T) {
 		},
 		{
 			name:  "No date",
-			input: generateCrossref(func(cr *CrossRef) { cr.Issued = DateParts{} }),
+			input: generateCrossref(func(cr *Crossref) { cr.Issued = DateParts{} }),
 			want: generateOutput(func(sp *SimplifiedPublication) {
 				sp.Year = 0
 				sp.Bibliographic = "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 0"
