@@ -1,6 +1,8 @@
 package crossrefindexer
 
 import (
+	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -61,4 +63,37 @@ func Load(path string, publications chan Crossref) error {
 
 	close(publications)
 	return err
+}
+
+// GzipReader creates a new Reader of a gziped file.
+//
+// It is the caller's responsibility to call Close on the Reader when done.
+func GzipReader(r io.Reader) (*gzip.Reader, error) {
+	gzipReader, err := gzip.NewReader(r)
+	if err != nil {
+		return gzipReader, fmt.Errorf("create gzip reader: %w", err)
+	}
+	return gzipReader, nil
+}
+
+// ClassifyDataFormat ...
+func ClassifyDataFormat(r io.Reader) (string, error) {
+	d := json.NewDecoder(r)
+
+	_, err := d.Token()
+	if err != nil {
+		return "", err
+	}
+
+	token, err := d.Token()
+	if err != nil {
+		return "", err
+	}
+
+	dataFormat := "jsonl"
+	if token == "items" {
+		dataFormat = "json"
+	}
+
+	return dataFormat, nil
 }
