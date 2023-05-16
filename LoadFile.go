@@ -76,7 +76,7 @@ func GzipReader(r io.Reader) (*gzip.Reader, error) {
 	return gzipReader, nil
 }
 
-// ClassifyDataFormat ...
+// ClassifyDataFormat Tries to figure out if the format is JSON or JSONL/NDJson (Newline Delimited JSON)
 func ClassifyDataFormat(r io.Reader) (string, error) {
 	d := json.NewDecoder(r)
 

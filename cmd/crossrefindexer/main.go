@@ -5,18 +5,39 @@ import (
 	"flag"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/karatekaneen/crossrefindexer"
+	"github.com/karatekaneen/crossrefindexer/elastic"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-type indexer interface {
-	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
+// type indexer interface {
+// 	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
+// }
+
+func createLogger() (*zap.Logger, error) {
+	// var loggerSettings zap.Config
+
+	// if cfg.Env == "production" {
+	// 	loggerSettings = zap.NewProductionConfig()
+	// 	loggerSettings.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	// } else {
+	loggerSettings := zap.NewDevelopmentConfig()
+	loggerSettings.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	// }
+
+	return loggerSettings.Build()
 }
 
 func main() {
-	log.Println("hello")
-	log.Println(os.Getwd())
+	l, err := createLogger()
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	logger := l.Sugar()
 	var dataPath string
 	flag.StringVar(
 		&dataPath,
@@ -27,6 +48,7 @@ func main() {
 	flag.Parse()
 
 	publications := make(chan crossrefindexer.Crossref)
+	dataToIndex := make(chan crossrefindexer.SimplifiedPublication)
 
 	// TODO: Add conversion
 	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`
@@ -38,12 +60,41 @@ func main() {
 		}
 	}()
 
+	cfg := elastic.Config{
+		IndexName:           "wtf",
+		Addresses:           []string{"http://localhost:9200"},
+		Username:            "elastic",
+		Password:            "123change...",
+		CompressRequestBody: true,
+		MaxRetries:          5,
+		NumWorkers:          4,
+	}
+
+	es, err := elastic.New(cfg, logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		if err := es.IndexPublications(context.Background(), dataToIndex); err != nil {
+			log.Fatal(err)
+		}
+		log.Println(err)
+		wg.Done()
+	}()
+
+	count := 0
 	for {
 		pub, open := <-publications
 		if !open {
+			close(dataToIndex)
 			break
 		}
-		test := crossrefindexer.ToSimplifiedPublication(&pub)
-		log.Printf("%v", test.Bibliographic)
+		count++
+		dataToIndex <- crossrefindexer.ToSimplifiedPublication(&pub)
 	}
+	log.Println("count", count)
+	wg.Wait()
 }
