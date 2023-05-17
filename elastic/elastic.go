@@ -17,20 +17,18 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: Add loading from env variables
 type Config struct {
-	BatchSize           int
-	IndexName           string
-	FlushBytes          int
-	FlushInterval       int
-	NumWorkers          int
-	Password            string
-	Username            string
-	Addresses           []string
-	CACert              []byte
-	DisableRetry        bool
-	MaxRetries          int
-	CompressRequestBody bool
+	IndexName           string        `help:"The index to write to"                                    default:"crossref"              name:"index"         env:"ES_INDEX"`
+	FlushBytes          int           `help:"How many bytes to buffer before flushing. Defaults to 5M" default:"5000000"               name:"flushbytes"    env:"ES_FLUSH_BYTES"`
+	FlushInterval       time.Duration `help:"How many seconds to wait before flushing"                 default:"10s"                   name:"flushinterval" env:"ES_FLUSH_INTERVAL"`
+	NumWorkers          int           `help:"Number of goroutines to run"                              default:"4"                     name:"workers"       env:"ES_WORKERS"`
+	Password            string        `help:"Password to elasticsearch"                                                                                     env:"ES_PASSWORD"       short:"p" optional:""`
+	Username            string        `help:"Username to elasticsearch"                                                                                     env:"ES_USER"           short:"u" optional:""`
+	Addresses           []string      `help:"Elasticsearch hosts"                                      default:"http://127.0.0.1:9200" name:"hosts"         env:"ES_HOSTS"`
+	CACert              []byte        `help:"CA cert to trust"                                                                         name:"ca"            env:"ES_CA_CERT"                  optional:""`
+	DisableRetry        bool          `help:"Fail on first failure"                                    default:"false"                 name:"noretry"       env:"ES_NO_RETRY"`
+	MaxRetries          int           `help:"Max number of retries after failure"                      default:"5"                                          env:"ES_MAX_RETRIES"`
+	CompressRequestBody bool          `help:"If the request body should be compressed"                 default:"false"                 name:"compress"      env:"ES_COMPRESS"       short:"c"`
 }
 
 type Indexer struct {
@@ -174,11 +172,11 @@ func createElasticClient(
 
 func createBulkIndexer(cfg Config, es *elasticsearch.Client) (esutil.BulkIndexer, error) {
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Index:         cfg.IndexName,                                  // The default index name
-		Client:        es,                                             // The Elasticsearch client
-		NumWorkers:    cfg.NumWorkers,                                 // The number of worker goroutines
-		FlushBytes:    cfg.FlushBytes,                                 // The flush threshold in bytes
-		FlushInterval: time.Duration(cfg.FlushInterval) * time.Second, // The periodic flush
+		Index:         cfg.IndexName,     // The default index name
+		Client:        es,                // The Elasticsearch client
+		NumWorkers:    cfg.NumWorkers,    // The number of worker goroutines
+		FlushBytes:    cfg.FlushBytes,    // The flush threshold in bytes
+		FlushInterval: cfg.FlushInterval, // The periodic flush
 	})
 
 	return bi, errors.Wrap(err, "could not create bulk indexer")
