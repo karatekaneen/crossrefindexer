@@ -46,22 +46,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	logger := l.Sugar()
-
+	logger := l.Sugar().With(
+		"file", cfg.File,
+		"dir", cfg.Dir,
+		"format", cfg.Format,
+		"compression", cfg.Compression,
+	)
 	logger.Debugln("Config loaded successfully")
 
 	publications := make(chan crossrefindexer.Crossref)
 	dataToIndex := make(chan crossrefindexer.SimplifiedPublication)
 
-	// TODO: Add conversion
-	// TODO: Add indexing around here `indexer.Index(ctx, convertedPublication)`
+	// LoadData. Can be file (json/gzip), dir or stdin
+	// If file: get format & compression then read data
+	// If dir: walk files, extract format, infer compression and then read as file
 
-	go func() {
-		err := crossrefindexer.Load("testdata/2021/0.json.gz", publications)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	// go func() {
+	// 	err := crossrefindexer.Load("testdata/2021/0.json.gz", publications)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }()
 
 	// cfg := elastic.Config{
 	// 	IndexName:           "wtf",

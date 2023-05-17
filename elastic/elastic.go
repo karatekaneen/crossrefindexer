@@ -28,7 +28,7 @@ type Config struct {
 	CACert              []byte        `help:"CA cert to trust"                                                                         name:"ca"            env:"ES_CA_CERT"                  optional:""`
 	DisableRetry        bool          `help:"Fail on first failure"                                    default:"false"                 name:"noretry"       env:"ES_NO_RETRY"`
 	MaxRetries          int           `help:"Max number of retries after failure"                      default:"5"                                          env:"ES_MAX_RETRIES"`
-	CompressRequestBody bool          `help:"If the request body should be compressed"                 default:"false"                 name:"compress"      env:"ES_COMPRESS"       short:"c"`
+	CompressRequestBody bool          `help:"If the request body should be compressed"                 default:"false"                 name:"compress"      env:"ES_COMPRESS"`
 }
 
 type Indexer struct {
