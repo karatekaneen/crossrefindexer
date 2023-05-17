@@ -3,6 +3,7 @@ module github.com/karatekaneen/crossrefindexer
 go 1.20
 
 require (
+	github.com/alecthomas/kong v0.7.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/elastic/go-elasticsearch/v7 v7.17.10

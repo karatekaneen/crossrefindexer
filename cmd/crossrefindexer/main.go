@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
-	"os"
 	"sync"
 
 	"github.com/karatekaneen/crossrefindexer"
+	"github.com/karatekaneen/crossrefindexer/config"
 	"github.com/karatekaneen/crossrefindexer/elastic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -17,35 +16,39 @@ import (
 // 	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
 // }
 
-func createLogger() (*zap.Logger, error) {
-	// var loggerSettings zap.Config
+func createLogger(level string) (*zap.Logger, error) {
+	var l zapcore.Level
 
-	// if cfg.Env == "production" {
-	// 	loggerSettings = zap.NewProductionConfig()
-	// 	loggerSettings.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	// } else {
+	switch level {
+	case "debug":
+		l = zap.DebugLevel
+	case "info":
+		l = zap.InfoLevel
+	case "warn":
+		l = zap.WarnLevel
+	case "error":
+		l = zap.ErrorLevel
+	default:
+		l = zap.InfoLevel
+	}
+
 	loggerSettings := zap.NewDevelopmentConfig()
 	loggerSettings.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	// }
+	loggerSettings.Level = zap.NewAtomicLevelAt(l)
 
 	return loggerSettings.Build()
 }
 
 func main() {
-	l, err := createLogger()
+	cfg := config.Load()
+	// Init logger
+	l, err := createLogger(cfg.LogLevel)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	logger := l.Sugar()
-	var dataPath string
-	flag.StringVar(
-		&dataPath,
-		"path",
-		os.Getenv("POOP"),
-		"Path to the crossref data, can be both directory or a single file.",
-	)
-	flag.Parse()
+
+	logger.Debugln("Config loaded successfully")
 
 	publications := make(chan crossrefindexer.Crossref)
 	dataToIndex := make(chan crossrefindexer.SimplifiedPublication)
@@ -60,17 +63,17 @@ func main() {
 		}
 	}()
 
-	cfg := elastic.Config{
-		IndexName:           "wtf",
-		Addresses:           []string{"http://localhost:9200"},
-		Username:            "elastic",
-		Password:            "123change...",
-		CompressRequestBody: true,
-		MaxRetries:          5,
-		NumWorkers:          4,
-	}
-
-	es, err := elastic.New(cfg, logger)
+	// cfg := elastic.Config{
+	// 	IndexName:           "wtf",
+	// 	Addresses:           []string{"http://localhost:9200"},
+	// 	Username:            "elastic",
+	// 	Password:            "123change...",
+	// 	CompressRequestBody: true,
+	// 	MaxRetries:          5,
+	// 	NumWorkers:          4,
+	// }
+	//
+	es, err := elastic.New(cfg.Elastic, logger)
 	if err != nil {
 		log.Fatal(err)
 	}
