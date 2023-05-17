@@ -8,7 +8,23 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"go.uber.org/zap"
 )
+
+type DataContainer struct {
+	data        io.ReadCloser
+	path        string
+	format      string
+	compression string
+}
+
+func (d *DataContainer) Valid() error {
+	if d.data == nil || d.format == "unknown" || d.compression == "unknown" {
+		return fmt.Errorf("DataContainer invalid: %+v", d)
+	}
+	return nil
+}
 
 func readFile(path string, publications chan Crossref) error {
 	file, err := os.Open(path)
@@ -43,26 +59,103 @@ func readFile(path string, publications chan Crossref) error {
 	return nil
 }
 
-func Load(path string, publications chan Crossref) error {
-	if path == "" {
-		return fmt.Errorf("path cannot be empty: %q", path)
+func Load(
+	logger *zap.SugaredLogger,
+	path, dir, format, compression string,
+	data io.Reader,
+) ([]DataContainer, error) {
+	switch {
+	case path == "-":
+		logger.Debugw("Reading from stdin")
+		return []DataContainer{
+			{
+				data:        io.NopCloser(data),
+				format:      format,
+				compression: compression,
+			},
+		}, nil
+	case path != "":
+		logger.Debug("Reading from file")
+		d, err := dataContainerFromPath(path, format, compression)
+		return []DataContainer{d}, err
+	case dir != "":
+		filesInDir, err := listFiles(dir)
+		if err != nil {
+			return nil, fmt.Errorf("File listing failed: %w", err)
+		}
+
+		output := make([]DataContainer, 0, len(filesInDir))
+
+		for _, f := range filesInDir {
+			d, err := dataContainerFromPath(f, format, compression)
+			if err != nil {
+				return nil, fmt.Errorf("could not create datacontainer from path %s, : %w", f, err)
+			}
+
+			output = append(output, d)
+		}
+
+		return output, nil
+	default:
+		return nil, fmt.Errorf("Unexpected path")
+	}
+}
+
+func listFiles(root string) ([]string, error) {
+	files := []string{}
+
+	acceptedExtensions := map[string]struct{}{
+		".gzip":   {},
+		".ndjson": {},
+		".json":   {},
+		".gz":     {},
 	}
 
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf(": %w", err)
+			return err
 		}
 
-		if !info.IsDir() && filepath.Ext(path) == ".gz" {
-			if err := readFile(path, publications); err != nil {
-				log.Printf("Err with reading file %q: %v", path, err)
-			}
+		if _, accepted := acceptedExtensions[filepath.Ext(path)]; !info.IsDir() && accepted {
+			files = append(files, path)
 		}
+
 		return nil
 	})
+	return files, err
+}
 
-	close(publications)
-	return err
+func dataContainerFromPath(path, format, compression string) (DataContainer, error) {
+	d := DataContainer{
+		format:      format,
+		compression: compression,
+		path:        path,
+	}
+
+	// Don't override if compression has been set explicitly
+	if d.compression == "unknown" || d.compression == "" {
+		ext := filepath.Ext(path)
+		switch ext {
+		case ".gzip":
+			fallthrough
+		case ".gz":
+			d.compression = "gzip"
+		case ".ndjson":
+			fallthrough
+		case ".json":
+			d.compression = "none"
+		default:
+			d.compression = "none"
+		}
+	}
+
+	if d.format == "unknown" {
+		// ClassifyFormat()
+		// TODO: Add classification here
+		log.Fatalln("Format detection not implemented")
+	}
+
+	return d, nil
 }
 
 // GzipReader creates a new Reader of a gziped file.
