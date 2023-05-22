@@ -10,7 +10,7 @@ import (
 
 const description = `Small CLI application to uncompress and index Crossref metadata. 
 It can read from file, directories and stdin.
-It supports both compressed (xz only at the time of writing) and raw JSON/NDJSON.`
+It supports both compressed (gzip only at the time of writing) and raw JSON/NDJSON.`
 
 type Config struct {
 	File        string                 `help:"Absolute or relative path to a single file to index. If you set to '-' it will read from stdin"                                                       short:"f" optional:"" type:"existingfile"`
