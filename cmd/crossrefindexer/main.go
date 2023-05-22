@@ -3,18 +3,15 @@ package main
 import (
 	"context"
 	"log"
-	"sync"
+	"os"
 
 	"github.com/karatekaneen/crossrefindexer"
 	"github.com/karatekaneen/crossrefindexer/config"
 	"github.com/karatekaneen/crossrefindexer/elastic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/sync/errgroup"
 )
-
-// type indexer interface {
-// 	Index(ctx context.Context, data chan crossrefindexer.SimplifiedPublication) error
-// }
 
 func createLogger(level string) (*zap.Logger, error) {
 	var l zapcore.Level
@@ -54,45 +51,65 @@ func main() {
 	)
 	logger.Debugln("Config loaded successfully")
 
+	es, err := elastic.New(cfg.Elastic, logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	publications := make(chan crossrefindexer.Crossref)
 	dataToIndex := make(chan crossrefindexer.SimplifiedPublication)
 
 	// LoadData. Can be file (json/gzip), dir or stdin
 	// If file: get format & compression then read data
 	// If dir: walk files, extract format, infer compression and then read as file
-
-	// go func() {
-	// 	err := crossrefindexer.Load("testdata/2021/0.json.gz", publications)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }()
-
-	// cfg := elastic.Config{
-	// 	IndexName:           "wtf",
-	// 	Addresses:           []string{"http://localhost:9200"},
-	// 	Username:            "elastic",
-	// 	Password:            "123change...",
-	// 	CompressRequestBody: true,
-	// 	MaxRetries:          5,
-	// 	NumWorkers:          4,
-	// }
-	//
-	es, err := elastic.New(cfg.Elastic, logger)
+	inputs, err := crossrefindexer.Load(
+		logger,
+		cfg.File,
+		cfg.Dir,
+		cfg.Format,
+		cfg.Compression,
+		os.Stdin,
+	)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalln(err)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		if err := es.IndexPublications(context.Background(), dataToIndex); err != nil {
-			log.Fatal(err)
-		}
-		log.Println(err)
-		wg.Done()
-	}()
+	// Create an errgroup to manage goroutines
+	group := new(errgroup.Group)
+	indexGroup := new(errgroup.Group)
+	readGroup := new(errgroup.Group)
+	readGroup.SetLimit(cfg.Elastic.NumWorkers + 1) // Add one for the fan-in
+	// TODO: Add flag to delete existing index if wanted
 
+	// Initialize the indexing
+	group.Go(func() error {
+		indexGroup.Go(func() error {
+			return es.IndexPublications(context.Background(), dataToIndex)
+		})
+		return indexGroup.Wait()
+	})
+
+	group.Go(func() error {
+		defer close(publications)
+
+		for i, container := range inputs {
+			container := container // Because Go is wonky
+
+			// Log progress
+			logger.Debugw("Parsing file",
+				"index", i,
+				"numberOfItems", len(inputs),
+				"path", container.Path,
+			)
+
+			// Process the file
+			readGroup.Go(func() error { return crossrefindexer.ParseData(container, publications) })
+		}
+
+		return readGroup.Wait()
+	})
+
+	// Convert the data and pipe it to the indexing channel
 	count := 0
 	for {
 		pub, open := <-publications
@@ -103,6 +120,10 @@ func main() {
 		count++
 		dataToIndex <- crossrefindexer.ToSimplifiedPublication(&pub)
 	}
-	log.Println("count", count)
-	wg.Wait()
+
+	if err := group.Wait(); err != nil {
+		logger.Errorf("Something failed: %w", err)
+	} else {
+		logger.Infof("Indexed %d publications from %d files successfully", count, len(inputs))
+	}
 }

@@ -55,12 +55,12 @@ func New(config Config, log *zap.SugaredLogger) (*Indexer, error) {
 	return idx, nil
 }
 
-// IndexPublications ...
+// IndexPublications is responsible for consuming all the publications sent on `data` and then close
+// the indexer when the channel is closed
 func (i *Indexer) IndexPublications(
 	ctx context.Context,
 	data chan crossrefindexer.SimplifiedPublication,
 ) error {
-	// TODO: Add flag to delete existing index if wanted
 	countSuccessful := &atomic.Uint64{}
 	start := time.Now()
 	bulkIndexer, err := createBulkIndexer(i.config, i.client)
@@ -73,7 +73,10 @@ func (i *Indexer) IndexPublications(
 		pub, stillOpen := <-data
 		if !stillOpen {
 			// If the channel is closed  - We "commit" the publications already in the slice before returning
+			i.log.Debug("Starting to close indexer")
 			err := bulkIndexer.Close(ctx)
+			i.log.Debugf("Closed indexer with err: %q", err)
+
 			i.logStats(bulkIndexer.Stats(), start)
 			return errors.Wrap(err, "Closing of bulkindexer failed")
 		}
