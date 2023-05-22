@@ -10,6 +10,7 @@ require (
 	github.com/matryer/is v1.4.1
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.24.0
+	golang.org/x/sync v0.2.0
 )
 
 require (

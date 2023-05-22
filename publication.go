@@ -1,44 +1,11 @@
 package crossrefindexer
 
 import (
-	"encoding/json"
-	"io"
+	"fmt"
+	"regexp"
+	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 )
-
-func JsonParser(r io.Reader, ch chan Crossref, format string) error {
-	d := json.NewDecoder(r)
-
-	// The json format is quite nested so we need to skip
-	// three levels "deep" to reach the data that we want
-	if format == "json" {
-		//nolint:errcheck
-		d.Token()
-		//nolint:errcheck
-		d.Token()
-		//nolint:errcheck
-		d.Token()
-	}
-
-	elementIndex := 0
-
-	for d.More() {
-		var publication Crossref
-
-		err := d.Decode(&publication)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return errors.Wrapf(err, "failed on parsing element %d", elementIndex)
-		}
-
-		ch <- publication
-		elementIndex++
-	}
-	return nil
-}
 
 // Reference and value semantics reflect required and optional value in json
 type Crossref struct {
@@ -151,4 +118,121 @@ type License struct {
 	Start          Indexed `json:"start"`
 	DelayInDays    int     `json:"delay-in-days"`
 	ContentVersion string  `json:"content-version"`
+}
+
+func pubTitle(pub Crossref) []string {
+	simpleTitle := pub.Title
+	if len(simpleTitle) == 0 {
+		return []string{""}
+	}
+	for pos, title := range simpleTitle {
+		title = strings.Replace(title, "\n", " ", -1)
+		title = strings.Replace(title, "( )+", " ", -1)
+		simpleTitle[pos] = strings.TrimSpace(title)
+	}
+	return simpleTitle
+}
+
+func firstPage(pub *Crossref) string {
+	sp := regexp.MustCompile(
+		`,|-` +
+			// This matches any white space character, including spaces, tabs, and newlines.
+			`|\s`)
+	pagePieces := sp.Split(pub.Page, -1)
+	return pagePieces[0]
+}
+
+// year is a date part (first one) in issued or created or published-online (we follow this order)
+func pubYear(pub *Crossref) int {
+	var year int
+	switch {
+	case pub.Issued.DateParts != nil:
+		year = extractYear(pub.Issued.DateParts)
+	case pub.PublishedOnline != nil:
+		year = extractYear(pub.PublishedOnline.DateParts)
+	case pub.PublishedPrint != nil:
+		year = extractYear(pub.PublishedPrint.DateParts)
+	case pub.Created.DateParts != nil:
+		// this is deposit date, normally we will never use it, but it will ensure
+		// that we always have a date as conservative fallback
+		year = extractYear(pub.Created.DateParts)
+	default:
+		year = 0
+	}
+	return year
+}
+
+// extractYear from dateparts and handle if it is empty
+func extractYear(dp [][]int) int {
+	if len(dp) < 1 || len(dp[0]) < 1 {
+		return 0
+	}
+
+	return dp[0][0]
+}
+
+func buildBibliographicField(pub *Crossref) string {
+	author := make([]string, len(pub.Author))
+	for _, auth := range pub.Author {
+		if stringFromPointer(auth.Family) == "" {
+			continue
+		}
+		author = append(author, *auth.Family)
+	}
+
+	abbreviatedJournal := []string{}
+	if pub.ShortContainerTitle != nil {
+		abbreviatedJournal = *pub.ShortContainerTitle
+	}
+
+	bibliographic := []string{
+		strings.TrimSpace(strings.Join(author, " ")),
+		pubTitle(*pub)[0],
+		strings.Join(pub.ContainerTitle, " "),
+		strings.Join(abbreviatedJournal, " "),
+		pub.Volume,
+		pub.Issue,
+		firstPage(pub),
+		fmt.Sprint(pubYear(pub)),
+	}
+
+	return strings.Join(bibliographic, " ")
+}
+
+type SimplifiedPublication struct {
+	Title               []string
+	DOI                 string
+	First_Page          string
+	Journal             []string
+	Abbreviated_Journal []string
+	Volume              string
+	Issue               string
+	Year                int
+	Bibliographic       string
+}
+
+func stringFromPointer(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func ToSimplifiedPublication(pub *Crossref) SimplifiedPublication {
+	abbreviatedJournal := []string{}
+	if pub.ShortContainerTitle != nil {
+		abbreviatedJournal = *pub.ShortContainerTitle
+	}
+
+	var simpPub SimplifiedPublication
+	simpPub.Title = pubTitle(*pub)
+	simpPub.DOI = pub.Doi
+	simpPub.First_Page = firstPage(pub)
+	simpPub.Journal = pub.ContainerTitle
+	simpPub.Abbreviated_Journal = abbreviatedJournal
+	simpPub.Volume = pub.Volume
+	simpPub.Issue = pub.Issue
+	simpPub.Year = pubYear(pub)
+	simpPub.Bibliographic = buildBibliographicField(pub)
+	return simpPub
 }
