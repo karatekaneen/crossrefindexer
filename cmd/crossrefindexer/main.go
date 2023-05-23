@@ -74,11 +74,10 @@ func main() {
 		logger.Fatalln(err)
 	}
 
-	// Create an errgroup to manage goroutines
-	group := new(errgroup.Group)
-	indexGroup := new(errgroup.Group)
-	readGroup := new(errgroup.Group)
-	readGroup.SetLimit(cfg.Elastic.NumWorkers + 1) // Add one for the fan-in
+	group := new(errgroup.Group)               // Create an errgroup to manage goroutines
+	indexGroup := new(errgroup.Group)          // A group to hold the indexing
+	readGroup := new(errgroup.Group)           // A group to read the files
+	readGroup.SetLimit(cfg.Elastic.NumWorkers) // Limit the number of files to read concurrently
 	// TODO: Add flag to delete existing index if wanted
 
 	// Initialize the indexing
@@ -92,12 +91,12 @@ func main() {
 	group.Go(func() error {
 		defer close(publications)
 
-		for i, container := range inputs {
+		for index, container := range inputs {
 			container := container // Because Go is wonky
 
 			// Log progress
 			logger.Debugw("Parsing file",
-				"index", i,
+				"index", index,
 				"numberOfItems", len(inputs),
 				"path", container.Path,
 			)
@@ -122,8 +121,8 @@ func main() {
 	}
 
 	if err := group.Wait(); err != nil {
-		logger.Errorf("Something failed: %w", err)
-	} else {
-		logger.Infof("Indexed %d publications from %d files successfully", count, len(inputs))
+		logger.Fatalf("Something failed: %w", err)
 	}
+
+	logger.Infof("Indexed %d publications from %d files successfully", count, len(inputs))
 }

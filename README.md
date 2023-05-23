@@ -12,7 +12,12 @@ Configuration can be done via commandline flags or env variables.
 
 ## Installation
 
-TODO: you need to run `go install github.com/karatekaneen/....`
+Make sure you have Go installed and made sure that the correct folders are added to $PATH.
+Then run:
+
+```sh
+go install github.com/karatekaneen/crossrefindexer/cmd/crossrefindexer`
+```
 
 ## Usage
 
