@@ -76,17 +76,24 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	// Remove the index before starting if the user has requested it.
 	if cfg.RemoveIndex {
 		if err := es.DeleteIndex(ctx, cfg.Elastic.IndexName); err != nil {
 			logger.Fatalf("Could not delete index: %s: %w", cfg.Elastic.IndexName, err)
 		}
+		logger.Infof("Existing index %q removed", cfg.Elastic.IndexName)
 	}
+
+	// Make sure the index is created
+	if err := es.CreateIndex(ctx, cfg.Elastic.IndexName, elastic.DefaultSettings()); err != nil {
+		logger.Fatalf("Could not create index: %s: %w", cfg.Elastic.IndexName, err)
+	}
+	logger.Infof("Existing index %q has been created or already exists", cfg.Elastic.IndexName)
 
 	group := new(errgroup.Group)               // Create an errgroup to manage goroutines
 	indexGroup := new(errgroup.Group)          // A group to hold the indexing
 	readGroup := new(errgroup.Group)           // A group to read the files
 	readGroup.SetLimit(cfg.Elastic.NumWorkers) // Limit the number of files to read concurrently
-	// TODO: Add flag to delete existing index if wanted
 
 	// Initialize the indexing
 	group.Go(func() error {

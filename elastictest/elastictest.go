@@ -26,6 +26,14 @@ type (
 )
 
 var (
+	CaseCreateIndexOk = TestCase{
+		path:       "testdata/elastic/create_index_ok.json",
+		statusCode: 200,
+	}
+	CaseCreateIndexConflict = TestCase{
+		path:       "testdata/elastic/create_index_conflict.json",
+		statusCode: 400,
+	}
 	CaseDeleteIndexOk = TestCase{
 		path:       "testdata/elastic/delete_index_ok.json",
 		statusCode: 200,

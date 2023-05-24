@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -74,21 +74,43 @@ func (i *Indexer) DeleteIndex(ctx context.Context, indexName string) error {
 
 	resp, err := deleteApi([]string{indexName})
 	if err != nil {
-		log.Println(err)
 		return fmt.Errorf("Delete request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Let's ignore 404s
-	if resp.IsError() && resp.StatusCode != 404 {
+	if resp.IsError() && resp.StatusCode != http.StatusNotFound {
 		return newElasticError(resp)
 	}
 
 	return nil
 }
 
-func (i *Indexer) CreateIndex(ctx context.Context, indexName string) error {
-	return fmt.Errorf("not implemented")
+func (i *Indexer) CreateIndex(ctx context.Context, indexName string, settings IndexSettings) error {
+	createApi := i.client.API.Indices.Create
+
+	data, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("could not marshal settings to json: %w", err)
+	}
+	resp, err := createApi(
+		indexName,
+		createApi.WithContext(ctx),
+		createApi.WithBody(bytes.NewReader(data)),
+	)
+	if err != nil {
+		return fmt.Errorf("Delete request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Let's ignore conflicts where the index already exists
+	if resp.IsError() {
+		err := newElasticError(resp)
+		if !strings.Contains(err.Error(), "already exists") {
+			return err
+		}
+	}
+	return nil
 }
 
 // IndexPublications is responsible for consuming all the publications sent on `data` and then close
