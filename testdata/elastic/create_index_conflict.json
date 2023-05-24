@@ -1,0 +1,17 @@
+{
+  "error": {
+    "root_cause": [
+      {
+        "type": "resource_already_exists_exception",
+        "reason": "index [my-index-000001/IeHGaTrIQyyC3G1R-nbTGQ] already exists",
+        "index_uuid": "IeHGaTrIQyyC3G1R-nbTGQ",
+        "index": "my-index-000001"
+      }
+    ],
+    "type": "resource_already_exists_exception",
+    "reason": "index [my-index-000001/IeHGaTrIQyyC3G1R-nbTGQ] already exists",
+    "index_uuid": "IeHGaTrIQyyC3G1R-nbTGQ",
+    "index": "my-index-000001"
+  },
+  "status": 400
+}

@@ -37,6 +37,8 @@ func createLogger(level string) (*zap.Logger, error) {
 }
 
 func main() {
+	ctx := context.Background()
+
 	cfg := config.Load()
 	// Init logger
 	l, err := createLogger(cfg.LogLevel)
@@ -74,6 +76,12 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	if cfg.RemoveIndex {
+		if err := es.DeleteIndex(ctx, cfg.Elastic.IndexName); err != nil {
+			logger.Fatalf("Could not delete index: %s: %w", cfg.Elastic.IndexName, err)
+		}
+	}
+
 	group := new(errgroup.Group)               // Create an errgroup to manage goroutines
 	indexGroup := new(errgroup.Group)          // A group to hold the indexing
 	readGroup := new(errgroup.Group)           // A group to read the files
@@ -83,7 +91,7 @@ func main() {
 	// Initialize the indexing
 	group.Go(func() error {
 		indexGroup.Go(func() error {
-			return es.IndexPublications(context.Background(), dataToIndex)
+			return es.IndexPublications(ctx, dataToIndex)
 		})
 		return indexGroup.Wait()
 	})

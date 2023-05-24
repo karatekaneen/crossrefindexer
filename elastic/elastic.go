@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -32,27 +34,61 @@ type Config struct {
 }
 
 type Indexer struct {
-	config Config
-	client *elasticsearch.Client
-	log    *zap.SugaredLogger
+	config    Config
+	client    *elasticsearch.Client
+	log       *zap.SugaredLogger
+	transport http.RoundTripper
 }
 
-func New(config Config, log *zap.SugaredLogger) (*Indexer, error) {
+type Option func(*Indexer)
+
+func New(config Config, log *zap.SugaredLogger, options ...Option) (*Indexer, error) {
+	idx := &Indexer{
+		config: config,
+		log:    log,
+	}
 	// Instantiate the exponential backoff thingy
 	retryBackoff := backoff.NewExponentialBackOff()
 
-	esClient, err := createElasticClient(config, retryBackoff)
+	for _, option := range options {
+		option(idx)
+	}
+
+	esClient, err := createElasticClient(config, retryBackoff, idx.transport)
 	if err != nil {
 		return nil, err
 	}
 
-	idx := &Indexer{
-		config: config,
-		client: esClient,
-		log:    log,
-	}
+	idx.client = esClient
 
 	return idx, nil
+}
+
+// Add custom transport.
+// TODO: Maybe move this to config?
+func WithTransport(rt http.RoundTripper) Option { return func(i *Indexer) { i.transport = rt } }
+
+func (i *Indexer) DeleteIndex(ctx context.Context, indexName string) error {
+	// The API is kinda fubar so lets just assign it to a variable for ease of use
+	deleteApi := i.client.API.Indices.Delete
+
+	resp, err := deleteApi([]string{indexName})
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("Delete request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Let's ignore 404s
+	if resp.IsError() && resp.StatusCode != 404 {
+		return newElasticError(resp)
+	}
+
+	return nil
+}
+
+func (i *Indexer) CreateIndex(ctx context.Context, indexName string) error {
+	return fmt.Errorf("not implemented")
 }
 
 // IndexPublications is responsible for consuming all the publications sent on `data` and then close
@@ -152,8 +188,9 @@ func (i *Indexer) logStats(biStats esutil.BulkIndexerStats, start time.Time) {
 func createElasticClient(
 	cfg Config,
 	retryBackoff *backoff.ExponentialBackOff,
+	transport http.RoundTripper,
 ) (*elasticsearch.Client, error) {
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
+	elasticConfig := elasticsearch.Config{
 		RetryOnStatus:       []int{502, 503, 504, 429},
 		Password:            cfg.Password,
 		Username:            cfg.Username,
@@ -162,13 +199,16 @@ func createElasticClient(
 		DisableRetry:        cfg.DisableRetry,
 		CompressRequestBody: cfg.CompressRequestBody,
 		MaxRetries:          cfg.MaxRetries,
+		Transport:           transport,
 		RetryBackoff: func(i int) time.Duration {
 			if i == 1 {
 				retryBackoff.Reset()
 			}
 			return retryBackoff.NextBackOff()
 		},
-	})
+	}
+
+	es, err := elasticsearch.NewClient(elasticConfig)
 
 	return es, errors.Wrap(err, "failed to init elasticsearch client")
 }

@@ -13,12 +13,13 @@ It can read from file, directories and stdin.
 It supports both compressed (gzip only at the time of writing) and raw JSON/NDJSON.`
 
 type Config struct {
-	File        string                 `help:"Absolute or relative path to a single file to index. If you set to '-' it will read from stdin"                                                       short:"f" optional:"" type:"existingfile"`
-	Dir         string                 `help:"Absolute or relative path to a directory containing files to index"                                                                                             optional:"" type:"existingdir"`
-	Elastic     elastic.Config         `help:"Configuration for elasticsearch connection and indexing"                                                                                                        optional:""                     embed:"" prefix:"es."`
-	Format      crossrefindexer.Format `help:"The format of the uncompressed files. Will try to detect if not provided but is required if using stdin. Can be json, ndjson or unknown"                        optional:""                                           default:"unknown" enum:"unknown,json,ndjson"`
-	Compression string                 `help:"How the data file is compressed. For files it will use the file extension if not provided. For dirs it will be ignored. Can be unknown, none or gzip" short:"c"                                                       default:"unknown" enum:"unknown,none,gzip"`
-	LogLevel    string                 `help:"Log verbosity. Can be debug, info, warn, error"                                                                                                                                                                       default:"info"                               name:"loglevel"`
+	RemoveIndex bool                   `help:"Remove existing index before starting. WARNING - you will not get any confirmation prompt"                                                            default:"false"`
+	File        string                 `help:"Absolute or relative path to a single file to index. If you set to '-' it will read from stdin"                                                                         short:"f" optional:"" type:"existingfile"`
+	Dir         string                 `help:"Absolute or relative path to a directory containing files to index"                                                                                                               optional:"" type:"existingdir"`
+	Elastic     elastic.Config         `help:"Configuration for elasticsearch connection and indexing"                                                                                                                          optional:""                     embed:"" prefix:"es."`
+	Format      crossrefindexer.Format `help:"The format of the uncompressed files. Will try to detect if not provided but is required if using stdin. Can be json, ndjson or unknown"              default:"unknown"           optional:""                                           enum:"unknown,json,ndjson"`
+	Compression string                 `help:"How the data file is compressed. For files it will use the file extension if not provided. For dirs it will be ignored. Can be unknown, none or gzip" default:"unknown" short:"c"                                                       enum:"unknown,none,gzip"`
+	LogLevel    string                 `help:"Log verbosity. Can be debug, info, warn, error"                                                                                                       default:"info"                                                                                               name:"loglevel"`
 }
 
 type configValidator func(Config) error
