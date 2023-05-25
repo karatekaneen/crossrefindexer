@@ -26,7 +26,7 @@ func Test_Load(t *testing.T) {
 			name:        "Stdin happy path",
 			path:        "-",
 			data:        strings.NewReader("foxtrot unicorn"),
-			format:      "json",
+			format:      FormatJSON,
 			compression: "none",
 			wantData:    "foxtrot unicorn",
 			want: []DataContainer{
@@ -40,9 +40,8 @@ func Test_Load(t *testing.T) {
 		{
 			name:        "file happy path",
 			path:        "test.json",
-			format:      "json",
+			format:      FormatJSON,
 			compression: "none",
-			wantData:    "foxtrot unicorn",
 			want: []DataContainer{
 				{
 					Format:      FormatJSON,
@@ -52,10 +51,9 @@ func Test_Load(t *testing.T) {
 			},
 		},
 		{
-			name:     "dir happy path with detected compression",
-			dir:      "testdata/2021",
-			format:   "json",
-			wantData: "foxtrot unicorn",
+			name:   "dir happy path with detected compression",
+			dir:    "testdata/2021",
+			format: FormatJSON,
 			want: []DataContainer{
 				{
 					Format:      FormatJSON,
@@ -82,9 +80,8 @@ func Test_Load(t *testing.T) {
 		{
 			name:        "dir happy path with explicit compression",
 			dir:         "testdata/2021",
-			format:      "json",
+			format:      FormatJSON,
 			compression: "none",
-			wantData:    "foxtrot unicorn",
 			want: []DataContainer{
 				{
 					Format:      FormatJSON,
@@ -104,6 +101,33 @@ func Test_Load(t *testing.T) {
 				{
 					Format:      FormatJSON,
 					Compression: "none",
+					Path:        "testdata/2021/2.json.gz",
+				},
+			},
+		},
+		{
+			name:   "dir detect both format and compression",
+			dir:    "testdata/2021",
+			format: FormatUnknown,
+			want: []DataContainer{
+				{
+					Format:      FormatJSON,
+					Compression: "none",
+					Path:        "testdata/2021/0.json",
+				},
+				{
+					Format:      FormatJSON,
+					Compression: "gzip",
+					Path:        "testdata/2021/0.json.gz",
+				},
+				{
+					Format:      FormatJSON,
+					Compression: "gzip",
+					Path:        "testdata/2021/1.json.gz",
+				},
+				{
+					Format:      FormatJSON,
+					Compression: "gzip",
 					Path:        "testdata/2021/2.json.gz",
 				},
 			},

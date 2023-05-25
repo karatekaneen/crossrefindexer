@@ -94,5 +94,4 @@ crossrefindexer --dir testdata/2022 --format json
 
 ## TODO
 
-- Implement format detection
 - Support TAR files

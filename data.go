@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -200,33 +199,49 @@ func dataContainerFromPath(path string, format Format, compression string) (Data
 		}
 	}
 
-	if d.Format == "unknown" {
-		// ClassifyFormat()
-		// TODO: Add classification here
-		log.Fatalln("Format detection not implemented")
+	if d.Format == FormatUnknown {
+		detectedFormat, err := classifyDataFormat(d)
+		if err != nil {
+			return d, fmt.Errorf("Could not detect format: %w", err)
+		}
+		d.Format = detectedFormat
 	}
 
 	return d, nil
 }
 
-// ClassifyDataFormat Tries to figure out if the format is JSON or JSONL/NDJson (Newline Delimited JSON)
-// func ClassifyDataFormat(r io.Reader) (string, error) {
-// 	d := json.NewDecoder(r)
-//
-// 	_, err := d.Token()
-// 	if err != nil {
-// 		return "", err
-// 	}
-//
-// 	token, err := d.Token()
-// 	if err != nil {
-// 		return "", err
-// 	}
-//
-// 	dataFormat := "jsonl"
-// 	if token == "items" {
-// 		dataFormat = "json"
-// 	}
-//
-// 	return dataFormat, nil
-// }
+// classifyDataFormat Tries to figure out if the format is JSON or JSONL/NDJson (Newline Delimited JSON)
+func classifyDataFormat(d DataContainer) (Format, error) {
+	f, err := os.Open(d.Path)
+	if err != nil {
+		return FormatUnknown, fmt.Errorf("open file for format classification failed: %w", err)
+	}
+	defer f.Close()
+
+	var data io.ReadCloser = f
+	if d.Compression == "gzip" {
+		data, err = gzip.NewReader(data)
+		if err != nil {
+			return FormatUnknown, fmt.Errorf("create gzip reader: %w", err)
+		}
+	}
+	defer data.Close()
+
+	dec := json.NewDecoder(data)
+
+	if _, err := dec.Token(); err != nil {
+		return FormatUnknown, err
+	}
+
+	token, err := dec.Token()
+	if err != nil {
+		return FormatUnknown, err
+	}
+
+	dataFormat := FormatNDJSON
+	if token == "items" {
+		dataFormat = FormatJSON
+	}
+
+	return dataFormat, nil
+}
