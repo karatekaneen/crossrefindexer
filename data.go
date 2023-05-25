@@ -186,20 +186,16 @@ func dataContainerFromPath(path string, format Format, compression string) (Data
 	if d.Compression == "unknown" || d.Compression == "" {
 		ext := filepath.Ext(path)
 		switch ext {
-		case ".gzip":
-			fallthrough
-		case ".gz":
+		case ".gzip", ".gz":
 			d.Compression = "gzip"
-		case ".ndjson":
-			fallthrough
-		case ".json":
+		case ".json", ".ndjson":
 			d.Compression = "none"
 		default:
 			d.Compression = "none"
 		}
 	}
 
-	if d.Format == FormatUnknown {
+	if d.Format == FormatUnknown || d.Format == "" {
 		detectedFormat, err := classifyDataFormat(d)
 		if err != nil {
 			return d, fmt.Errorf("Could not detect format: %w", err)
@@ -228,7 +224,6 @@ func classifyDataFormat(d DataContainer) (Format, error) {
 	defer data.Close()
 
 	dec := json.NewDecoder(data)
-
 	if _, err := dec.Token(); err != nil {
 		return FormatUnknown, err
 	}
