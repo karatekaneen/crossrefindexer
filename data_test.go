@@ -2,6 +2,7 @@ package crossrefindexer
 
 import (
 	"io"
+	"log"
 	"strings"
 	"sync"
 	"testing"
@@ -196,6 +197,16 @@ func Test_ParseData(t *testing.T) {
 			wantErr:           false,
 		},
 		{
+			name: "happy path - JSON gzip 2023",
+			input: DataContainer{
+				Format:      "json",
+				Compression: "gzip",
+				Path:        "testdata/2023/1.json.gz",
+			},
+			wantNumberOfItems: 5000,
+			wantErr:           false,
+		},
+		{
 			name: "happy path - JSON gzip 2022",
 			input: DataContainer{
 				Format:      "json",
@@ -247,12 +258,18 @@ func Test_ParseData(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				for {
-					_, open := <-ch
+					pub, open := <-ch
 					if !open {
 						wg.Done()
 						return
 					}
 					parsed++
+
+					// HACK: If we fail the test here it deadlocks because of the posting to
+					// the channel within ParseData below. Should be improved
+					if pub.Doi == "" {
+						log.Fatalf("Invalid data: %+v", pub)
+					}
 				}
 			}()
 
