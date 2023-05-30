@@ -173,6 +173,7 @@ func (i *Indexer) bulkIndexerItem(
 		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
 			count := countSuccessful.Add(1)
 
+			i.log.Debugln(count)
 			// Log more often in the beginning to get quick feedback
 			highFreq := count < 1_000_000 && count%100_000 == 0   // Log every 100k in the beginning
 			lowFreq := count >= 1_000_000 && count%1_000_000 == 0 // Log every 1m afterwards
@@ -215,6 +216,7 @@ func createElasticClient(
 	cfg Config,
 	retryBackoff *backoff.ExponentialBackOff,
 	transport http.RoundTripper,
+	logger *zap.SugaredLogger,
 ) (*elasticsearch.Client, error) {
 	elasticConfig := elasticsearch.Config{
 		RetryOnStatus:       []int{502, 503, 504, 429},
@@ -230,6 +232,8 @@ func createElasticClient(
 			if i == 1 {
 				retryBackoff.Reset()
 			}
+
+			logger.Debugf("Retry for the %d time", i)
 			return retryBackoff.NextBackOff()
 		},
 	}
