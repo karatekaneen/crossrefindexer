@@ -144,8 +144,6 @@ func (i *Indexer) IndexPublications(
 			return errors.Wrap(err, fmt.Sprintf("Cannot encode publication %s", pub.DOI))
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
 		err = bulkIndexer.Add(
 			ctx,
 			i.bulkIndexerItem(bulkIndexer, pub.DOI, jsonData, countSuccessful, start),
