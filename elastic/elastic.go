@@ -54,7 +54,7 @@ func New(config Config, log *zap.SugaredLogger, options ...Option) (*Indexer, er
 		option(idx)
 	}
 
-	esClient, err := createElasticClient(config, retryBackoff, idx.transport)
+	esClient, err := createElasticClient(config, retryBackoff, idx.transport, log)
 	if err != nil {
 		return nil, err
 	}
