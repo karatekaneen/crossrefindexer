@@ -76,6 +76,8 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	logger.Infof("Found %d files to process", len(inputs))
+
 	// Remove the index before starting if the user has requested it.
 	if cfg.RemoveIndex {
 		if err := es.DeleteIndex(ctx, cfg.Elastic.IndexName); err != nil {

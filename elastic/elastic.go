@@ -172,7 +172,11 @@ func (i *Indexer) bulkIndexerItem(
 		// OnSuccess is called for each successful operation
 		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
 			count := countSuccessful.Add(1)
-			if count%10000 == 0 {
+
+			// Log more often in the beginning to get quick feedback
+			highFreq := count < 1_000_000 && count%100_000 == 0   // Log every 100k in the beginning
+			lowFreq := count >= 1_000_000 && count%1_000_000 == 0 // Log every 1m afterwards
+			if highFreq || lowFreq {
 				i.logStats(bulkIndexer.Stats(), startTime)
 			}
 		},
