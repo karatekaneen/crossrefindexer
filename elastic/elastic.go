@@ -23,7 +23,7 @@ type Config struct {
 	IndexName           string        `help:"The index to write to"                                    default:"crossref"              name:"index"         env:"ES_INDEX"`
 	FlushBytes          int           `help:"How many bytes to buffer before flushing. Defaults to 5M" default:"5000000"               name:"flushbytes"    env:"ES_FLUSH_BYTES"`
 	FlushInterval       time.Duration `help:"How many seconds to wait before flushing"                 default:"10s"                   name:"flushinterval" env:"ES_FLUSH_INTERVAL"`
-	NumWorkers          int           `help:"Number of goroutines to run"                              default:"4"                     name:"workers"       env:"ES_WORKERS"`
+	NumWorkers          int           `help:"Number of goroutines to run"                              default:"2"                     name:"workers"       env:"ES_WORKERS"`
 	Password            string        `help:"Password to elasticsearch"                                                                                     env:"ES_PASSWORD"       short:"p" optional:""`
 	Username            string        `help:"Username to elasticsearch"                                                                                     env:"ES_USER"           short:"u" optional:""`
 	Addresses           []string      `help:"Elasticsearch hosts"                                      default:"http://127.0.0.1:9200" name:"hosts"         env:"ES_HOSTS"`
@@ -246,6 +246,7 @@ func createBulkIndexer(cfg Config, es *elasticsearch.Client) (esutil.BulkIndexer
 		NumWorkers:    cfg.NumWorkers,    // The number of worker goroutines
 		FlushBytes:    cfg.FlushBytes,    // The flush threshold in bytes
 		FlushInterval: cfg.FlushInterval, // The periodic flush
+		Refresh:       "-1",              // Disable refresh
 	})
 
 	return bi, errors.Wrap(err, "could not create bulk indexer")
