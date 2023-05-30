@@ -250,7 +250,6 @@ func createBulkIndexer(cfg Config, es *elasticsearch.Client) (esutil.BulkIndexer
 		NumWorkers:    cfg.NumWorkers,    // The number of worker goroutines
 		FlushBytes:    cfg.FlushBytes,    // The flush threshold in bytes
 		FlushInterval: cfg.FlushInterval, // The periodic flush
-		Refresh:       "-1",              // Disable refresh
 	})
 
 	return bi, errors.Wrap(err, "could not create bulk indexer")
