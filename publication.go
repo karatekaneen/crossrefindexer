@@ -200,15 +200,15 @@ func buildBibliographicField(pub *Crossref) string {
 }
 
 type SimplifiedPublication struct {
-	Title               []string
-	DOI                 string
-	First_Page          string
-	Journal             []string
-	Abbreviated_Journal []string
-	Volume              string
-	Issue               string
-	Year                int
-	Bibliographic       string
+	Title              []string `json:"title"`
+	DOI                string   `json:"DOI"`
+	FirstPage          string   `json:"first_page"`
+	Journal            []string `json:"journal"`
+	AbbreviatedJournal []string `json:"abbreviated_journal"`
+	Volume             string   `json:"volume"`
+	Issue              string   `json:"issue"`
+	Year               int      `json:"year"`
+	Bibliographic      string   `json:"bibliographic"`
 }
 
 func stringFromPointer(s *string) string {
@@ -227,9 +227,9 @@ func ToSimplifiedPublication(pub *Crossref) SimplifiedPublication {
 	var simpPub SimplifiedPublication
 	simpPub.Title = pubTitle(*pub)
 	simpPub.DOI = pub.Doi
-	simpPub.First_Page = firstPage(pub)
+	simpPub.FirstPage = firstPage(pub)
 	simpPub.Journal = pub.ContainerTitle
-	simpPub.Abbreviated_Journal = abbreviatedJournal
+	simpPub.AbbreviatedJournal = abbreviatedJournal
 	simpPub.Volume = pub.Volume
 	simpPub.Issue = pub.Issue
 	simpPub.Year = pubYear(pub)

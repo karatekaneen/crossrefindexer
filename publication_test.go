@@ -67,15 +67,15 @@ func generateCrossref(modifiers ...func(*Crossref)) *Crossref {
 
 func generateOutput(modifiers ...func(*SimplifiedPublication)) SimplifiedPublication {
 	pub := SimplifiedPublication{
-		Title:               []string{"title 1", "title 2"},
-		DOI:                 "DOI",
-		First_Page:          "200",
-		Journal:             []string{"Container Title 1", "Container Title 2"},
-		Abbreviated_Journal: []string{"Short Container Title 1", "Short Container Title 2"},
-		Volume:              "Volume",
-		Issue:               "Issue",
-		Year:                2006,
-		Bibliographic:       "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
+		Title:              []string{"title 1", "title 2"},
+		DOI:                "DOI",
+		FirstPage:          "200",
+		Journal:            []string{"Container Title 1", "Container Title 2"},
+		AbbreviatedJournal: []string{"Short Container Title 1", "Short Container Title 2"},
+		Volume:             "Volume",
+		Issue:              "Issue",
+		Year:               2006,
+		Bibliographic:      "f1 f2 f3 title 1 Container Title 1 Container Title 2 Short Container Title 1 Short Container Title 2 Volume Issue 200 2006",
 	}
 
 	for _, modifier := range modifiers {
